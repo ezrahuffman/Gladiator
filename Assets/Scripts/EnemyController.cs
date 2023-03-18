@@ -1,10 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
     HealthSystem healthSystem;
+
+    [SerializeField] private HealthBar healthBar;
 
     void Start()
     {
@@ -13,6 +13,7 @@ public class EnemyController : MonoBehaviour
         {
             healthSystem.onTakeDmg += OnTakeDamage;
             healthSystem.onReducedToNoHealth += OnReducedToNoHealth;
+            healthSystem.onHealthChanged += OnHealthChanged;
         }
     }
 
@@ -24,5 +25,10 @@ public class EnemyController : MonoBehaviour
     protected virtual void OnReducedToNoHealth()
     {
         Debug.Log($"{gameObject} has been reduced to no health");
+    }
+
+    protected virtual void OnHealthChanged(float maxHealth, float currHealth)
+    {
+        healthBar.UpateHealthbar(maxHealth, currHealth);
     }
 }

@@ -20,6 +20,9 @@ public class HealthSystem : MonoBehaviour
 
     public delegate void OnReducedToNoHealth();
     public OnReducedToNoHealth onReducedToNoHealth;
+    
+    public delegate void OnHealthChanged(float maxHealth, float currHealth);
+    public OnHealthChanged onHealthChanged;
 
     private void Start()
     {
@@ -42,11 +45,16 @@ public class HealthSystem : MonoBehaviour
 
     private void SetHealth(float value) 
     {
-        //float ogHealth = _health;
+        float ogHealth = _health;
 
         value = Math.Clamp(value, 0, maxHealth);
 
         _health = value;
+
+        if (_health != ogHealth && onHealthChanged != null)
+        {
+            onHealthChanged.Invoke(maxHealth, _health);
+        }
 
         if (_health == 0 && onReducedToNoHealth != null)
         {
