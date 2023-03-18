@@ -18,7 +18,7 @@ public class HealthSystem : MonoBehaviour
     public delegate void OnTakeDmg(float trueDmg, GameObject dmgSource);
     public OnTakeDmg onTakeDmg;
 
-    public delegate void OnReducedToNoHealth();
+    public delegate void OnReducedToNoHealth(HealthSystem healthSystem);
     public OnReducedToNoHealth onReducedToNoHealth;
     
     public delegate void OnHealthChanged(float maxHealth, float currHealth);
@@ -58,8 +58,16 @@ public class HealthSystem : MonoBehaviour
 
         if (_health == 0 && onReducedToNoHealth != null)
         {
-            onReducedToNoHealth.Invoke();
+            onReducedToNoHealth.Invoke(this);
         }
         
+    }
+
+    public float Health
+    {
+        get
+        {
+            return _health;
+        }
     }
 }

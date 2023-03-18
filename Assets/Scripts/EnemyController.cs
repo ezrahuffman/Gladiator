@@ -6,6 +6,10 @@ public class EnemyController : MonoBehaviour
 
     [SerializeField] private HealthBar healthBar;
 
+    private Animator _animator;
+    private bool _hasAnimator;
+    private int _animIDHitTrigger;
+
     void Start()
     {
         healthSystem = GetComponent<HealthSystem>();
@@ -15,14 +19,24 @@ public class EnemyController : MonoBehaviour
             healthSystem.onReducedToNoHealth += OnReducedToNoHealth;
             healthSystem.onHealthChanged += OnHealthChanged;
         }
+
+        _hasAnimator = TryGetComponent(out _animator);
+        if (_hasAnimator)
+        {
+            _animIDHitTrigger = Animator.StringToHash("HitTrigger");
+        }
     }
 
     protected virtual void OnTakeDamage(float dmg, GameObject dmgSource)
     {
         Debug.Log($"Took ${dmg} from ${dmgSource}");
+        if(_hasAnimator && healthSystem.Health > 0)
+        {
+            _animator.SetTrigger(_animIDHitTrigger);
+        }
     }
 
-    protected virtual void OnReducedToNoHealth()
+    protected virtual void OnReducedToNoHealth(HealthSystem healthSystem)
     {
         Debug.Log($"{gameObject} has been reduced to no health");
     }

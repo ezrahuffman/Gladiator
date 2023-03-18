@@ -111,6 +111,9 @@ namespace StarterAssets
         private int _animIDJump;
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
+        private int _animIDRightPunchTrigger;
+        private int _animIDLeftPunchTrigger;
+        private int _animIDHitTrigger;
 
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
@@ -120,7 +123,7 @@ namespace StarterAssets
         private CharacterController _controller;
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
-
+        
         private const float _threshold = 0.01f;
 
         private bool _hasAnimator;
@@ -192,6 +195,8 @@ namespace StarterAssets
             _animIDJump = Animator.StringToHash("Jump");
             _animIDFreeFall = Animator.StringToHash("FreeFall");
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+            _animIDRightPunchTrigger = Animator.StringToHash("PunchRightTrigger");
+            _animIDLeftPunchTrigger = Animator.StringToHash("PunchLeftTrigger");
         }
 
         private void GroundedCheck()
@@ -235,16 +240,25 @@ namespace StarterAssets
             //TODO: use a different input system
             if (_input.punchRight)
             {
+                if (_hasAnimator)
+                {
+                    _animator.SetTrigger(_animIDRightPunchTrigger);
+                }
                 PunchRight();
                 _punchRight = true; // This is used for drawing debug sphere for punch
                 _input.punchRight = false;
             }
             else if (_input.punchLeft)
             {
+                if (_hasAnimator)
+                {
+                    _animator.SetTrigger(_animIDLeftPunchTrigger);
+                }
                 PunchLeft();
                 _punchLeft = true; // This is used for drawing debug sphere for punch
                 _input.punchLeft = false;
             }
+            
         }
 
         private void PunchRight()
@@ -287,9 +301,9 @@ namespace StarterAssets
 
 
             //See if we hit anything special
-            if (hit.collider != null)
+            if (hit.point != null && hit.collider != null)
             {
-                Debug.Log($"Left Punched {hit.collider.gameObject}");
+                
                 PunchHit(hit.point, hit.collider);
             }
             else
