@@ -1,3 +1,4 @@
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
@@ -15,6 +16,7 @@ namespace StarterAssets
 		public bool sprint;
 		public bool punchRight;
 		public bool punchLeft;
+		public bool crouch;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -43,7 +45,13 @@ namespace StarterAssets
 			JumpInput(value.isPressed);
 		}
 
-		public void OnPunchRight(InputValue value)
+		public void OnCrouch(InputValue value)
+        {
+			CrouchInput(value.isPressed);
+        }
+
+
+        public void OnPunchRight(InputValue value)
 		{
 			PunchRightInput(value.isPressed);
 		}
@@ -74,6 +82,11 @@ namespace StarterAssets
 		{
 			jump = newJumpState;
 		}
+        private void CrouchInput(bool newCrouchState)
+        {
+			Debug.Log($"isCrouchPressed: {newCrouchState}");
+            crouch = newCrouchState;
+        }
 
 		public void PunchRightInput(bool newPunchRightState)
 		{

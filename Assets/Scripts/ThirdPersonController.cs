@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
 #endif
@@ -50,6 +51,10 @@ namespace StarterAssets
         [Tooltip("If the character is grounded or not. Not part of the CharacterController built in grounded check")]
         public bool Grounded = true;
 
+
+        [Tooltip("Height of the character when crouched. The center of the player is automatically set to half the height when crouched")]
+        public float CrouchHeight;
+
         [Tooltip("Useful for rough ground")]
         public float GroundedOffset = -0.14f;
 
@@ -100,6 +105,8 @@ namespace StarterAssets
         private float _rotationVelocity;
         private float _verticalVelocity;
         private float _terminalVelocity = 53.0f;
+        private float _standingHeight;
+        private Vector3 _standingCenter;
 
         // timeout deltatime
         private float _jumpTimeoutDelta;
@@ -114,6 +121,7 @@ namespace StarterAssets
         private int _animIDRightPunchTrigger;
         private int _animIDLeftPunchTrigger;
         private int _animIDHitTrigger;
+        private int _animIDCrouch;
 
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
@@ -130,6 +138,8 @@ namespace StarterAssets
 
         private bool _punchRight;
         private bool _punchLeft;
+
+        private bool _tryToCrouch;
 
         private bool IsCurrentDeviceMouse
         {
@@ -171,16 +181,41 @@ namespace StarterAssets
             // reset our timeouts on start
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
+
+            _standingCenter = _controller.center;
+            _standingHeight = _controller.height; 
         }
 
         private void Update()
         {
             _hasAnimator = TryGetComponent(out _animator);
 
+            Crouch();
             JumpAndGravity();
             GroundedCheck();
             Move();
             Attack();
+        }
+
+        private void Crouch()
+        {
+            bool currCrouch = _tryToCrouch;
+            _tryToCrouch = _input.crouch;
+            if (_hasAnimator)
+            {
+                _animator.SetBool(_animIDCrouch, _tryToCrouch);
+            }
+            if (_input.crouch)
+            {
+                _controller.height = CrouchHeight;
+                _controller.center = new Vector3(0, CrouchHeight / 2, 0);
+                Debug.Log("Crouch"); //TODO: implement physics for crouch, i.e. smaller collider
+            } else if(currCrouch != _tryToCrouch)
+            {
+                _controller.height = _standingHeight;
+                _controller.center = _standingCenter; 
+                Debug.Log("Crouch"); //TODO: implement physics for crouch, i.e. smaller collider
+            }
         }
 
         private void LateUpdate()
@@ -197,6 +232,7 @@ namespace StarterAssets
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
             _animIDRightPunchTrigger = Animator.StringToHash("PunchRightTrigger");
             _animIDLeftPunchTrigger = Animator.StringToHash("PunchLeftTrigger");
+            _animIDCrouch = Animator.StringToHash("Crouch");
         }
 
         private void GroundedCheck()
@@ -243,20 +279,24 @@ namespace StarterAssets
                 if (_hasAnimator)
                 {
                     _animator.SetTrigger(_animIDRightPunchTrigger);
+                    _animator.SetBool(_animIDCrouch, false);
                 }
                 PunchRight();
                 _punchRight = true; // This is used for drawing debug sphere for punch
                 _input.punchRight = false;
+                _tryToCrouch = false;
             }
             else if (_input.punchLeft)
             {
                 if (_hasAnimator)
                 {
                     _animator.SetTrigger(_animIDLeftPunchTrigger);
+                    _animator.SetBool(_animIDCrouch, false);
                 }
                 PunchLeft();
                 _punchLeft = true; // This is used for drawing debug sphere for punch
                 _input.punchLeft = false;
+                _tryToCrouch = false; 
             }
             
         }
@@ -333,8 +373,17 @@ namespace StarterAssets
 
         private void Move()
         {
+            if (_input.sprint)
+            {
+                _tryToCrouch = false;
+            }
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            if (_tryToCrouch)
+            {
+                // limit speed to crouch speed
+                Math.Clamp(targetSpeed, targetSpeed, 6f); //TODO: creat variable for crouch speed
+            } 
 
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
@@ -396,6 +445,7 @@ namespace StarterAssets
             {
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+                _animator.SetBool(_animIDCrouch, _tryToCrouch);
             }
         }
 
@@ -429,7 +479,10 @@ namespace StarterAssets
                     if (_hasAnimator)
                     {
                         _animator.SetBool(_animIDJump, true);
+                        _animator.SetBool(_animIDCrouch, false);
                     }
+
+                    _tryToCrouch = false;
                 }
 
                 // jump timeout
@@ -495,7 +548,7 @@ namespace StarterAssets
             {
                 if (FootstepAudioClips.Length > 0)
                 {
-                    var index = Random.Range(0, FootstepAudioClips.Length);
+                    var index = UnityEngine.Random.Range(0, FootstepAudioClips.Length);
                     AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
                 }
             }
