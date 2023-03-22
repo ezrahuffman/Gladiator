@@ -20,6 +20,7 @@ namespace StarterAssets
 
         public void VirtualJumpInput(bool virtualJumpState)
         {
+            Debug.Log("Virtual jump");
             starterAssetsInputs.JumpInput(virtualJumpState);
         }
 

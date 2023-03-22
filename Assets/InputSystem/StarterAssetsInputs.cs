@@ -3,6 +3,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Interactions;
 #endif
 
 namespace StarterAssets
@@ -17,6 +18,9 @@ namespace StarterAssets
 		public bool punchRight;
 		public bool punchLeft;
 		public bool crouch;
+		public bool flipJump;
+
+
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -26,7 +30,42 @@ namespace StarterAssets
 		public bool cursorInputForLook = true;
 
 
+		[SerializeField]
+
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
+
+        public void Awake()
+        {
+			// TODO: Maybe don't search for this
+			InputAction jumpAction = null;
+            foreach (var item in GetComponent<PlayerInput>().actions)
+            {
+				if (item.name == "Jump")
+                {
+					jumpAction = item;
+                }
+
+			}
+
+
+			if (jumpAction != null)
+			{
+				jumpAction.performed +=
+					context =>
+					{
+						if (context.interaction is PressInteraction)
+						{
+							JumpInput(true);
+						}
+						else if (context.interaction is HoldInteraction || context.interaction is MultiTapInteraction)
+						{
+							FlipJumpInput(true);
+						}
+					};
+			}
+			
+		}
+
 		public void OnMove(InputValue value)
 		{
 			MoveInput(value.Get<Vector2>());
@@ -40,12 +79,21 @@ namespace StarterAssets
 			}
 		}
 
-		public void OnJump(InputValue value)
-		{
-			JumpInput(value.isPressed);
-		}
+		//public void OnJump(InputValue value)
+		//{
+		//	//value.GetType()
+		//	JumpInput(value.isPressed);
+		//}
 
-		public void OnCrouch(InputValue value)
+
+
+        //public void OnFlipJump(InputValue value)
+        //{
+        //    FlipJumpInput(value.isPressed);
+        //}
+
+
+        public void OnCrouch(InputValue value)
         {
 			CrouchInput(value.isPressed);
         }
@@ -80,8 +128,16 @@ namespace StarterAssets
 
 		public void JumpInput(bool newJumpState)
 		{
+			Debug.Log($"set jump {newJumpState}");
+
 			jump = newJumpState;
+
 		}
+        private void FlipJumpInput(bool newFlipJumpState)
+        {
+			Debug.Log($"set flipJump {newFlipJumpState}");
+			flipJump = newFlipJumpState;
+        }
         private void CrouchInput(bool newCrouchState)
         {
 			Debug.Log($"isCrouchPressed: {newCrouchState}");

@@ -37,6 +37,10 @@ namespace StarterAssets
         [Tooltip("The height the player can jump")]
         public float JumpHeight = 1.2f;
 
+        [Space(10)]
+        [Tooltip("The height the player can flip jump")]
+        public float FlipJumpHeight = 1.4f;
+
         [Tooltip("The character uses its own gravity value. The engine default is -9.81f")]
         public float Gravity = -15.0f;
 
@@ -122,6 +126,8 @@ namespace StarterAssets
         private int _animIDLeftPunchTrigger;
         private int _animIDHitTrigger;
         private int _animIDCrouch;
+        private int _animIDSlide;
+        private int _animIDFlip;
 
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
@@ -140,6 +146,7 @@ namespace StarterAssets
         private bool _punchLeft;
 
         private bool _tryToCrouch;
+        private bool _tryToSlide;
 
         private bool IsCurrentDeviceMouse
         {
@@ -190,6 +197,8 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
 
+           
+
             Crouch();
             JumpAndGravity();
             GroundedCheck();
@@ -207,14 +216,14 @@ namespace StarterAssets
             }
             if (_input.crouch)
             {
+                // Crouch
                 _controller.height = CrouchHeight;
                 _controller.center = new Vector3(0, CrouchHeight / 2, 0);
-                Debug.Log("Crouch"); //TODO: implement physics for crouch, i.e. smaller collider
             } else if(currCrouch != _tryToCrouch)
             {
+                // Uncrouch
                 _controller.height = _standingHeight;
                 _controller.center = _standingCenter; 
-                Debug.Log("Crouch"); //TODO: implement physics for crouch, i.e. smaller collider
             }
         }
 
@@ -233,6 +242,8 @@ namespace StarterAssets
             _animIDRightPunchTrigger = Animator.StringToHash("PunchRightTrigger");
             _animIDLeftPunchTrigger = Animator.StringToHash("PunchLeftTrigger");
             _animIDCrouch = Animator.StringToHash("Crouch");
+            _animIDSlide = Animator.StringToHash("Slide");
+            _animIDFlip = Animator.StringToHash("Flip");
         }
 
         private void GroundedCheck()
@@ -280,11 +291,13 @@ namespace StarterAssets
                 {
                     _animator.SetTrigger(_animIDRightPunchTrigger);
                     _animator.SetBool(_animIDCrouch, false);
+                    _animator.SetBool(_animIDSlide, false);
                 }
                 PunchRight();
                 _punchRight = true; // This is used for drawing debug sphere for punch
                 _input.punchRight = false;
                 _tryToCrouch = false;
+                _tryToSlide = false;
             }
             else if (_input.punchLeft)
             {
@@ -297,6 +310,7 @@ namespace StarterAssets
                 _punchLeft = true; // This is used for drawing debug sphere for punch
                 _input.punchLeft = false;
                 _tryToCrouch = false; 
+                _tryToSlide = false; 
             }
             
         }
@@ -375,8 +389,23 @@ namespace StarterAssets
         {
             if (_input.sprint)
             {
-                _tryToCrouch = false;
+                if (_speed > MoveSpeed && _tryToCrouch)
+                {
+                    Debug.Log("Already Sprinting start slide, if trying to crouch");
+                    _tryToSlide = true;
+                }
+                else
+                {
+                    _tryToCrouch = false;
+                }
             }
+
+            // Only continue sliding if still crouching (not a toggle atm)
+            if (_tryToSlide)
+            {
+                _tryToSlide = _tryToCrouch;
+            }
+
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
             if (_tryToCrouch)
@@ -446,6 +475,7 @@ namespace StarterAssets
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
                 _animator.SetBool(_animIDCrouch, _tryToCrouch);
+                _animator.SetBool(_animIDSlide, _tryToSlide);
             }
         }
 
@@ -461,6 +491,7 @@ namespace StarterAssets
                 {
                     _animator.SetBool(_animIDJump, false);
                     _animator.SetBool(_animIDFreeFall, false);
+                    _animator.SetBool(_animIDFlip, false);
                 }
 
                 // stop our velocity dropping infinitely when grounded
@@ -480,9 +511,27 @@ namespace StarterAssets
                     {
                         _animator.SetBool(_animIDJump, true);
                         _animator.SetBool(_animIDCrouch, false);
+                        _animator.SetBool(_animIDSlide, false);
                     }
 
                     _tryToCrouch = false;
+                    _tryToSlide = false;
+                }
+                else if (_input.flipJump && _jumpTimeoutDelta <= 0.0f)
+                {
+                    // the square root of H * -2 * G = how much velocity needed to reach desired height
+                    _verticalVelocity = Mathf.Sqrt(FlipJumpHeight * -2f * Gravity);
+
+                    // update animator if using character
+                    if (_hasAnimator)
+                    {
+                        _animator.SetBool(_animIDFlip, true);
+                        _animator.SetBool(_animIDCrouch, false);
+                        _animator.SetBool(_animIDSlide, false);
+                    }
+
+                    _tryToCrouch = false;
+                    _tryToSlide = false;
                 }
 
                 // jump timeout
@@ -512,6 +561,7 @@ namespace StarterAssets
 
                 // if we are not grounded, do not jump
                 _input.jump = false;
+                _input.flipJump = false;
             }
 
             // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
