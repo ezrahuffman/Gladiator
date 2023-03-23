@@ -98,6 +98,13 @@ namespace StarterAssets
         public float punchRadius = 2.5f;
         public float punchDmg = 10f;
 
+        [Header("Slide")]
+        public float slideDuration = 1f;
+        public float slideResetDuration = 2f;
+        public float slideSpeed = 10f;
+        public float slideHeight;
+        
+
         // cinemachine
         private float _cinemachineTargetYaw;
         private float _cinemachineTargetPitch;
@@ -138,6 +145,7 @@ namespace StarterAssets
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
         
+        
         private const float _threshold = 0.01f;
 
         private bool _hasAnimator;
@@ -147,6 +155,8 @@ namespace StarterAssets
 
         private bool _tryToCrouch;
         private bool _tryToSlide;
+        private float _slideTimer;
+        private float _slideResetTimer;
 
         private bool IsCurrentDeviceMouse
         {
@@ -188,6 +198,7 @@ namespace StarterAssets
             // reset our timeouts on start
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
+            _slideResetTimer = slideResetDuration;
 
             _standingCenter = _controller.center;
             _standingHeight = _controller.height; 
@@ -214,7 +225,7 @@ namespace StarterAssets
             {
                 _animator.SetBool(_animIDCrouch, _tryToCrouch);
             }
-            if (_input.crouch)
+            if (_input.crouch && !_tryToSlide)
             {
                 // Crouch
                 _controller.height = CrouchHeight;
@@ -385,41 +396,71 @@ namespace StarterAssets
             }
         }
 
+        private bool CanStartSlide()
+        {
+            bool resetFinished = _slideResetTimer > slideResetDuration;
+            return _speed > MoveSpeed && _tryToCrouch && !_tryToSlide && resetFinished;
+        }
+
         private void Move()
         {
+
             if (_input.sprint)
             {
-                if (_speed > MoveSpeed && _tryToCrouch)
+                if (CanStartSlide())
                 {
-                    Debug.Log("Already Sprinting start slide, if trying to crouch");
                     _tryToSlide = true;
+                    _slideTimer = 0f;
+              
+                    // Change collider dimensions
+                    _controller.height = slideHeight;
+                    _controller.center = new Vector3(0, slideHeight / 2, 0);
                 }
-                else
+                else if(_slideTimer > slideDuration)
                 {
                     _tryToCrouch = false;
                 }
             }
+            float targetSpeed;
 
             // Only continue sliding if still crouching (not a toggle atm)
+            // TODO: maybe change this to friction based slide stop, especially if there are multiple surface types
             if (_tryToSlide)
             {
-                _tryToSlide = _tryToCrouch;
+                targetSpeed = slideSpeed;
+
+                //CHATGPT ANSWER HERE
+                _slideTimer += Time.deltaTime;
+
+                // cancle if timer runs out or player isn't holding crouch anymore
+                _tryToSlide = _slideTimer >= slideDuration ? false : _tryToCrouch;
+
+               if (!_tryToSlide)
+                {
+                    Debug.Log("reset collider");
+                    // reset collider dimensions
+                    _controller.height = _standingHeight;
+                    _controller.center = new Vector3(0, _standingHeight / 2, 0);
+                    _slideResetTimer = 0;
+                }
             }
+            else {
+                _slideResetTimer += Time.deltaTime;
 
-            // set target speed based on move speed, sprint speed and if sprint is pressed
-            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
-            if (_tryToCrouch)
-            {
-                // limit speed to crouch speed
-                Math.Clamp(targetSpeed, targetSpeed, 6f); //TODO: creat variable for crouch speed
-            } 
+                // set target speed based on move speed, sprint speed and if sprint is pressed
+                targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+                if (_tryToCrouch)
+                {
+                    // limit speed to crouch speed
+                    Math.Clamp(targetSpeed, targetSpeed, 6f); //TODO: creat variable for crouch speed
+                }
 
-            // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
+                // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
-            // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-            // if there is no input, set the target speed to 0
-            if (_input.move == Vector2.zero) targetSpeed = 0.0f;
-
+                // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
+                // if there is no input, set the target speed to 0
+                if (_input.move == Vector2.zero) targetSpeed = 0.0f;
+            }
             // a reference to the players current horizontal velocity
             float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
 
@@ -451,7 +492,7 @@ namespace StarterAssets
 
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
-            if (_input.move != Vector2.zero)
+            if (_input.move != Vector2.zero && !_tryToSlide)
             {
                 _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
                                   _mainCamera.transform.eulerAngles.y;
@@ -462,7 +503,7 @@ namespace StarterAssets
                 transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
             }
 
-
+        
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
             // move the player

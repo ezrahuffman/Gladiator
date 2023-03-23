@@ -128,19 +128,15 @@ namespace StarterAssets
 
 		public void JumpInput(bool newJumpState)
 		{
-			Debug.Log($"set jump {newJumpState}");
-
 			jump = newJumpState;
 
 		}
         private void FlipJumpInput(bool newFlipJumpState)
         {
-			Debug.Log($"set flipJump {newFlipJumpState}");
 			flipJump = newFlipJumpState;
         }
         private void CrouchInput(bool newCrouchState)
         {
-			Debug.Log($"isCrouchPressed: {newCrouchState}");
             crouch = newCrouchState;
         }
 
