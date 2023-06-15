@@ -19,6 +19,7 @@ namespace StarterAssets
 		public bool punchLeft;
 		public bool crouch;
 		public bool flipJump;
+		public bool roll;
 
 
 
@@ -79,18 +80,10 @@ namespace StarterAssets
 			}
 		}
 
-		//public void OnJump(InputValue value)
-		//{
-		//	//value.GetType()
-		//	JumpInput(value.isPressed);
-		//}
-
-
-
-        //public void OnFlipJump(InputValue value)
-        //{
-        //    FlipJumpInput(value.isPressed);
-        //}
+		public void OnRoll(InputValue value)
+		{
+			RollInput(value.isPressed);
+		}
 
 
         public void OnCrouch(InputValue value)
@@ -139,6 +132,11 @@ namespace StarterAssets
         {
             crouch = newCrouchState;
         }
+
+		public void RollInput(bool newRollState)
+		{
+			roll = newRollState;
+		}
 
 		public void PunchRightInput(bool newPunchRightState)
 		{

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
@@ -40,6 +41,12 @@ namespace StarterAssets
         [Space(10)]
         [Tooltip("The height the player can flip jump")]
         public float FlipJumpHeight = 1.4f;
+
+        [Tooltip("The max absolute value that the characters y-velocity can have before the FlipJumpApex is triggered")]
+        public float FlipJumpApexBoundVelocityMagnitude = 0.2f;
+
+        [Tooltip("Hight of the capsule when the characters is in the appex of a flip-jump")]
+        public float FlipJumpCapsuleHeight;
 
         [Tooltip("The character uses its own gravity value. The engine default is -9.81f")]
         public float Gravity = -15.0f;
@@ -103,6 +110,12 @@ namespace StarterAssets
         public float slideResetDuration = 2f;
         public float slideSpeed = 10f;
         public float slideHeight;
+
+        [Header("Roll")]
+        public float rollSpeed = 10f;
+        public float rollDuration = .5f;
+        public float rollResetDuration = 2f;
+        public float rollHeight;
         
 
         // cinemachine
@@ -135,6 +148,7 @@ namespace StarterAssets
         private int _animIDCrouch;
         private int _animIDSlide;
         private int _animIDFlip;
+        private int _animIDRoll;
 
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
@@ -157,6 +171,11 @@ namespace StarterAssets
         private bool _tryToSlide;
         private float _slideTimer;
         private float _slideResetTimer;
+
+        private bool _tryToRoll;
+        private float _rollTimer;
+        private float _rollResetTimer;
+        
 
         private bool IsCurrentDeviceMouse
         {
@@ -199,6 +218,7 @@ namespace StarterAssets
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
             _slideResetTimer = slideResetDuration;
+            _rollResetTimer = rollResetDuration;
 
             _standingCenter = _controller.center;
             _standingHeight = _controller.height; 
@@ -233,9 +253,14 @@ namespace StarterAssets
             } else if(currCrouch != _tryToCrouch)
             {
                 // Uncrouch
-                _controller.height = _standingHeight;
-                _controller.center = _standingCenter; 
+                UncrouchCollider();
             }
+        }
+
+        private void UncrouchCollider()
+        {
+            _controller.height = _standingHeight;
+            _controller.center = _standingCenter;
         }
 
         private void LateUpdate()
@@ -255,6 +280,7 @@ namespace StarterAssets
             _animIDCrouch = Animator.StringToHash("Crouch");
             _animIDSlide = Animator.StringToHash("Slide");
             _animIDFlip = Animator.StringToHash("Flip");
+            _animIDRoll = Animator.StringToHash("Roll");
         }
 
         private void GroundedCheck()
@@ -402,9 +428,14 @@ namespace StarterAssets
             return _speed > MoveSpeed && _tryToCrouch && !_tryToSlide && resetFinished;
         }
 
+        private bool CanStartRoll()
+        {
+            bool resetFinished = _rollResetTimer > rollResetDuration;
+            return !_tryToSlide && resetFinished;
+        }
+
         private void Move()
         {
-
             if (_input.sprint)
             {
                 if (CanStartSlide())
@@ -421,31 +452,73 @@ namespace StarterAssets
                     _tryToCrouch = false;
                 }
             }
+
+            if (_input.roll && Grounded && !_tryToRoll)
+            {
+                if (CanStartRoll())
+                {
+                    Debug.Log("start roll");
+                    _tryToRoll = true;
+                    _rollTimer = 0f;
+
+                    // Change collider dimensions
+                    _controller.height = rollHeight;
+                    _controller.center = new Vector3(0, rollHeight / 2, 0);
+                }
+                else if (_slideTimer > slideDuration)
+                {
+                    _tryToCrouch = false;
+                }
+            }
             float targetSpeed;
 
-            // Only continue sliding if still crouching (not a toggle atm)
-            // TODO: maybe change this to friction based slide stop, especially if there are multiple surface types
-            if (_tryToSlide)
+            // TODO: this is horrible, split into functions to make more readable
+            if (_tryToRoll || _tryToSlide)
             {
-                targetSpeed = slideSpeed;
-
-                //CHATGPT ANSWER HERE
-                _slideTimer += Time.deltaTime;
-
-                // cancle if timer runs out or player isn't holding crouch anymore
-                _tryToSlide = _slideTimer >= slideDuration ? false : _tryToCrouch;
-
-               if (!_tryToSlide)
+                if (_tryToRoll)
                 {
-                    Debug.Log("reset collider");
-                    // reset collider dimensions
-                    _controller.height = _standingHeight;
-                    _controller.center = new Vector3(0, _standingHeight / 2, 0);
-                    _slideResetTimer = 0;
+                    targetSpeed = rollSpeed;
+
+                    _rollTimer += Time.deltaTime;
+
+                    _tryToRoll = _rollTimer < rollDuration;
+
+                    Debug.Log($"_rollTimer == {_rollTimer}, rollDurration = {rollDuration}");
+                    if (!_tryToRoll)
+                    {
+                        _controller.height = _standingHeight;
+                        _controller.center = new Vector3(0, _standingHeight / 2, 0);
+                        _rollResetTimer = 0;
+                    }
+                }
+
+                // Only continue sliding if still crouching (not a toggle atm)
+                // TODO: maybe change this to friction based slide stop, especially if there are multiple surface types
+                else // _tryToSlide == true --> run sliding logic
+                {
+                    targetSpeed = slideSpeed;
+
+                    //CHATGPT ANSWER HERE
+                    _slideTimer += Time.deltaTime;
+
+                    // cancle if timer runs out or player isn't holding crouch anymore
+                    _tryToSlide = _slideTimer >= slideDuration ? false : _tryToCrouch;
+
+                    if (!_tryToSlide)
+                    {
+                        Debug.Log("reset collider");
+                        // reset collider dimensions
+                        _controller.height = _standingHeight;
+                        _controller.center = new Vector3(0, _standingHeight / 2, 0);
+                        _slideResetTimer = 0;
+                    }
                 }
             }
             else {
-                _slideResetTimer += Time.deltaTime;
+                float slideResetTimerDelta = _tryToSlide ? 0 : Time.deltaTime;
+                float rollResetTimerDelta = _tryToRoll ? 0 : Time.deltaTime;
+                _slideResetTimer +=  slideResetTimerDelta;
+                _rollResetTimer += rollResetTimerDelta;
 
                 // set target speed based on move speed, sprint speed and if sprint is pressed
                 targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
@@ -461,6 +534,8 @@ namespace StarterAssets
                 // if there is no input, set the target speed to 0
                 if (_input.move == Vector2.zero) targetSpeed = 0.0f;
             }
+
+
             // a reference to the players current horizontal velocity
             float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
 
@@ -490,9 +565,17 @@ namespace StarterAssets
             // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
 
+            if (_tryToRoll)
+            {
+                inputDirection = transform.forward;
+                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg;
+            }
+
+            
+
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
-            if (_input.move != Vector2.zero && !_tryToSlide)
+            if (inputDirection != Vector3.zero && !_tryToSlide && !_tryToRoll)
             {
                 _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
                                   _mainCamera.transform.eulerAngles.y;
@@ -506,6 +589,8 @@ namespace StarterAssets
         
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
+            Debug.Log($"speed: {_speed}");
+
             // move the player
             _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
                              new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
@@ -517,7 +602,23 @@ namespace StarterAssets
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
                 _animator.SetBool(_animIDCrouch, _tryToCrouch);
                 _animator.SetBool(_animIDSlide, _tryToSlide);
+                _animator.SetBool(_animIDRoll, _tryToRoll);
             }
+        }
+
+        private void SetFlipCollider(bool rollUp)
+        {
+            if (rollUp)
+            {
+                // Roll into ball
+                _controller.height = FlipJumpCapsuleHeight;
+                _controller.center = new Vector3(0, (FlipJumpCapsuleHeight / 2) + .15f, 0);
+                return;
+            } 
+            
+            // Unroll from ball
+            _controller.height = _standingHeight;
+            _controller.center = _standingCenter;
         }
 
         private void JumpAndGravity()
@@ -586,6 +687,18 @@ namespace StarterAssets
                 // reset the jump timeout timer
                 _jumpTimeoutDelta = JumpTimeout;
 
+                // if we are currently flip jumping
+                if (_hasAnimator && _animator.GetBool(_animIDFlip))
+                {
+                    // Curl or uncurl from a ball depending on if we are within the apex of the jump
+                    SetFlipCollider(Math.Abs(_controller.velocity.y) < FlipJumpApexBoundVelocityMagnitude);
+                }
+                else
+                {
+                    // If we are not flipping just make sure that we are not still rolled up
+                    // TODO: this might interfere with crouching
+                    SetFlipCollider(false);
+                }
                 // fall timeout
                 if (_fallTimeoutDelta >= 0.0f)
                 {
