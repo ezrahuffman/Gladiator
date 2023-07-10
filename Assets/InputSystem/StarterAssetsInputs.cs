@@ -20,6 +20,7 @@ namespace StarterAssets
 		public bool crouch;
 		public bool flipJump;
 		public bool roll;
+		public bool lockOn;
 
 
 
@@ -54,14 +55,10 @@ namespace StarterAssets
 				jumpAction.performed +=
 					context =>
 					{
-						if (context.interaction is PressInteraction)
-						{
-							JumpInput(true);
-						}
-						else if (context.interaction is HoldInteraction || context.interaction is MultiTapInteraction)
-						{
-							FlipJumpInput(true);
-						}
+						Debug.Log($"Interaction: {context.interaction}");
+
+						FlipJumpInput(context.interaction is HoldInteraction);
+						JumpInput(context.interaction is PressInteraction || context.interaction is TapInteraction);
 					};
 			}
 			
@@ -85,6 +82,11 @@ namespace StarterAssets
 			RollInput(value.isPressed);
 		}
 
+		public void OnFlipJump(InputValue value)
+		{
+			FlipJumpInput(value.isPressed);
+		}
+
 
         public void OnCrouch(InputValue value)
         {
@@ -106,10 +108,20 @@ namespace StarterAssets
 		{
 			SprintInput(value.isPressed);
 		}
+
+		public void OnLockOn(InputValue value)
+		{
+            LockOnInput(value.isPressed);
+        }
+
 #endif
+        private void LockOnInput(bool isPressed)
+        {
+            lockOn = isPressed;
+        }
 
 
-		public void MoveInput(Vector2 newMoveDirection)
+        public void MoveInput(Vector2 newMoveDirection)
 		{
 			move = newMoveDirection;
 		} 

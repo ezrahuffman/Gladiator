@@ -175,7 +175,13 @@ namespace StarterAssets
         private bool _tryToRoll;
         private float _rollTimer;
         private float _rollResetTimer;
-        
+        private bool _previouslyGrounded;
+        [SerializeField] private float _timeToFlipJump;
+
+        [Header ("Lock On")]
+        [SerializeField] private GameObject LockOnTarget;
+        [SerializeField] private float LockOnStrength;
+        private bool _lockOn;
 
         private bool IsCurrentDeviceMouse
         {
@@ -436,8 +442,19 @@ namespace StarterAssets
 
         private void Move()
         {
+            if (_input.lockOn)
+            {
+                _lockOn = !_lockOn;
+                _input.lockOn = false;
+            }
             if (_input.sprint)
             {
+                if (_lockOn)
+                {
+                    _lockOn = false;
+                    _input.lockOn = false;
+                }
+
                 if (CanStartSlide())
                 {
                     _tryToSlide = true;
@@ -562,39 +579,75 @@ namespace StarterAssets
             _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
             if (_animationBlend < 0.01f) _animationBlend = 0f;
 
-            // normalise input direction
-            Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
 
-            if (_tryToRoll)
+            Vector2 input = _input.move;
+
+            // Convert the input direction from world space to camera space
+            Vector3 cameraForward = _mainCamera.transform.forward;
+            cameraForward.y = 0f;
+            cameraForward.Normalize();
+
+            Vector3 cameraRight = _mainCamera.transform.right;
+            cameraRight.y = 0f;
+            cameraRight.Normalize();
+
+            Vector3 localInput = cameraForward * input.y + cameraRight * input.x;
+
+            // Normalize the input direction to ensure consistent movement speed
+            if (localInput.magnitude > 1f)
             {
-                inputDirection = transform.forward;
-                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg;
+                localInput.Normalize();
             }
 
-            
+            // Calculate the target velocity based on the input direction and movement speed
+            Vector3 targetVelocity = localInput * _speed;
+            if (_tryToRoll || _tryToSlide)
+            {
+                Vector3 forward = transform.forward;
+                _targetRotation = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+                Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
+                targetVelocity = targetDirection * _speed;
+            }
+            targetVelocity = new Vector3(targetVelocity.x, _verticalVelocity, targetVelocity.z);
+
+
 
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
-            if (inputDirection != Vector3.zero && !_tryToSlide && !_tryToRoll)
+            if (/*input != Vector2.zero && */!_tryToSlide && !_tryToRoll)
             {
-                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
-                                  _mainCamera.transform.eulerAngles.y;
+                _targetRotation = Mathf.Atan2(input.x, input.y) * Mathf.Rad2Deg +
+                                    _mainCamera.transform.eulerAngles.y;
+                Quaternion lockOnTargetRotation = Quaternion.Euler(new Vector3(0, _targetRotation, 0));
+                if (LockOnTarget != null && _lockOn)
+                {
+                    Vector3 targetDirection = LockOnTarget.transform.position - transform.position;
+                    targetDirection.y = 0f;
+                    if (targetDirection.magnitude > 0.1f)
+                    {
+                        lockOnTargetRotation = Quaternion.LookRotation(targetDirection);
+                        //transform.rotation = Quaternion.Slerp(transform.rotation, lockOnTargetRotation, RotationSmoothTime);
+                    }
+
+                    // TODO this condition doesn't brake tha game
+                }
+                
+
+
+                _targetRotation = Mathf.LerpAngle(lockOnTargetRotation.eulerAngles.y, _targetRotation, LockOnStrength);
                 float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
                     RotationSmoothTime);
 
                 // rotate to face input direction relative to camera position
                 transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                
             }
-
-        
-            Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
             Debug.Log($"speed: {_speed}");
 
-            // move the player
-            _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
-                             new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+            _controller.Move(targetVelocity * Time.deltaTime);
 
+            
             // update animator if using character
             if (_hasAnimator)
             {
@@ -628,6 +681,14 @@ namespace StarterAssets
                 // reset the fall timeout timer
                 _fallTimeoutDelta = FallTimeout;
 
+                
+                if(!_previouslyGrounded)
+                {
+                    _verticalVelocity = 0f;
+                    _input.jump = false;
+                    _input.flipJump = false;
+                }
+
                 // update animator if using character
                 if (_hasAnimator)
                 {
@@ -642,24 +703,7 @@ namespace StarterAssets
                     _verticalVelocity = -2f;
                 }
 
-                // Jump
-                if (_input.jump && _jumpTimeoutDelta <= 0.0f)
-                {
-                    // the square root of H * -2 * G = how much velocity needed to reach desired height
-                    _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-
-                    // update animator if using character
-                    if (_hasAnimator)
-                    {
-                        _animator.SetBool(_animIDJump, true);
-                        _animator.SetBool(_animIDCrouch, false);
-                        _animator.SetBool(_animIDSlide, false);
-                    }
-
-                    _tryToCrouch = false;
-                    _tryToSlide = false;
-                }
-                else if (_input.flipJump && _jumpTimeoutDelta <= 0.0f)
+                if (_input.flipJump && _jumpTimeoutDelta <= 0.0f)
                 {
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(FlipJumpHeight * -2f * Gravity);
@@ -668,6 +712,23 @@ namespace StarterAssets
                     if (_hasAnimator)
                     {
                         _animator.SetBool(_animIDFlip, true);
+                        _animator.SetBool(_animIDCrouch, false);
+                        _animator.SetBool(_animIDSlide, false);
+                    }
+
+                    _tryToCrouch = false;
+                    _tryToSlide = false;
+                }
+                // Jump
+                else if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+                {
+                    // the square root of H * -2 * G = how much velocity needed to reach desired height
+                    _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+
+                    // update animator if using character
+                    if (_hasAnimator)
+                    {
+                        _animator.SetBool(_animIDJump, true);
                         _animator.SetBool(_animIDCrouch, false);
                         _animator.SetBool(_animIDSlide, false);
                     }
@@ -684,11 +745,19 @@ namespace StarterAssets
             }
             else
             {
-                // reset the jump timeout timer
+                // reset the jump timeout timer\
+                // TODO: this looks wrong
                 _jumpTimeoutDelta = JumpTimeout;
+                bool flipJumping = _animator.GetBool(_animIDFlip);
+
+                //if(_hasAnimator && !flipJumping && _input.flipJump && FallTimeout - _fallTimeoutDelta < _timeToFlipJump)
+                //{
+                //    Debug.Log("flip jump while jumping");
+                //    _animator.SetBool(_animIDFlip, true);   
+                //}
 
                 // if we are currently flip jumping
-                if (_hasAnimator && _animator.GetBool(_animIDFlip))
+                if (_hasAnimator && flipJumping)
                 {
                     // Curl or uncurl from a ball depending on if we are within the apex of the jump
                     SetFlipCollider(Math.Abs(_controller.velocity.y) < FlipJumpApexBoundVelocityMagnitude);
@@ -713,9 +782,9 @@ namespace StarterAssets
                     }
                 }
 
-                // if we are not grounded, do not jump
-                _input.jump = false;
-                _input.flipJump = false;
+                //// if we are not grounded, do not jump
+                //_input.jump = false;
+                //_input.flipJump = false;
             }
 
             // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
@@ -723,6 +792,8 @@ namespace StarterAssets
             {
                 _verticalVelocity += Gravity * Time.deltaTime;
             }
+
+            _previouslyGrounded = Grounded;
         }
 
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
