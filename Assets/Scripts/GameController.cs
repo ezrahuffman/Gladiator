@@ -1,4 +1,5 @@
 using StarterAssets;
+using System.Collections;
 using UnityEngine;
 
 public class GameController : MonoBehaviour
@@ -39,12 +40,30 @@ public class GameController : MonoBehaviour
         if(_enemiesRemaining <= 0)
         {
             Debug.Log("GAME OVER ALL ENEMIES ARE DEAD");
-            PauseGame();
-            gameOverScreen.SetActive(true);
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.Confined;
-            playerController.LockCameraPosition = true;
+            StartCoroutine(StartCountDown(5));
         }
+    }
+
+    IEnumerator StartCountDown(int time = 5)
+    {
+        Debug.Log("Starting countdown");
+        for (; time > 0; time -= 1)
+        {
+            // TODO: Update UI to show the time remaining
+            Debug.Log($"Time remaining: {time}");
+            yield return new WaitForSeconds(1);
+        }
+        GameOver();
+    }
+
+    void GameOver()
+    {
+        Debug.Log("GAME OVER ALL ENEMIES ARE DEAD");
+        PauseGame();
+        gameOverScreen.SetActive(true);
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Confined;
+        playerController.LockCameraPosition = true;
     }
 
     void PauseGame()

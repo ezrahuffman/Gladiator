@@ -30,7 +30,7 @@ public class EnemyController : MonoBehaviour
     protected virtual void OnTakeDamage(float dmg, GameObject dmgSource)
     {
         Debug.Log($"Took ${dmg} from ${dmgSource}");
-        if(_hasAnimator && healthSystem.Health > 0)
+        if(_hasAnimator)
         {
             _animator.SetTrigger(_animIDHitTrigger);
         }

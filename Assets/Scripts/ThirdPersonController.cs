@@ -98,6 +98,9 @@ namespace StarterAssets
         [Tooltip("Transform of the character's left shoulder")]
         public Transform leftShoulder;
 
+        [SerializeField] private Hand _leftHand;
+        [SerializeField] private Hand _rightHand;
+
        
 
 
@@ -209,6 +212,9 @@ namespace StarterAssets
             {
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
             }
+
+            _rightHand.OnHandCollision += PunchHit;
+            _leftHand.OnHandCollision += PunchHit;
         }
 
         private void Start()
@@ -353,7 +359,7 @@ namespace StarterAssets
                     _animator.SetBool(_animIDCrouch, false);
                     _animator.SetBool(_animIDSlide, false);
                 }
-                PunchRight();
+                //PunchRight();
                 _punchRight = true; // This is used for drawing debug sphere for punch
                 _input.punchRight = false;
                 _tryToCrouch = false;
@@ -366,7 +372,7 @@ namespace StarterAssets
                     _animator.SetTrigger(_animIDLeftPunchTrigger);
                     _animator.SetBool(_animIDCrouch, false);
                 }
-                PunchLeft();
+                //PunchLeft();
                 _punchLeft = true; // This is used for drawing debug sphere for punch
                 _input.punchLeft = false;
                 _tryToCrouch = false; 
@@ -406,11 +412,12 @@ namespace StarterAssets
 
 
             // close distance  to target
-            if (targetDirection.magnitude > _lockOnTargetCloseDistance)
+            if (targetDirection.magnitude > punchRange)
             {
                 Debug.Log("Close distance to target");
+                float distanceToPunchRange = targetDirection.magnitude - punchRange;
                 Debug.DrawLine(_controller.transform.position, _controller.transform.position + (targetDirection.normalized * _lockOnTargetCloseDistance), Color.red, 10f);
-                _controller.Move(targetDirection.normalized * _lockOnTargetCloseDistance);
+                _controller.Move(targetDirection.normalized * distanceToPunchRange);//_lockOnTargetCloseDistance);
                 _controller.SimpleMove(Vector3.zero); // This is to stop the character from boosting
             }
 
@@ -431,7 +438,7 @@ namespace StarterAssets
             if(hit.collider != null)
             {
                 Debug.Log($"Right Punched {hit.collider.gameObject}");
-                PunchHit(hit.point, hit.collider);
+                //PunchHit(hit.point, hit.collider);
             }
             else
             {
@@ -439,14 +446,16 @@ namespace StarterAssets
             }
         }
 
-        private void PunchHit(Vector3 point, Collider collider)
+        private void PunchHit(Collision collision)
         {
-            if (collider == null) { return; }
 
-            
-            if (collider.gameObject != null && collider.gameObject.GetComponent<HealthSystem>() != null)
+
+            if (collision == null) { return; }
+
+
+            if (collision.gameObject != null && collision.gameObject.GetComponent<HealthSystem>() != null)
             {
-                collider.gameObject.GetComponent<HealthSystem>().RecieveDmg(punchDmg, gameObject);
+                collision.gameObject.GetComponent<HealthSystem>().RecieveDmg(punchDmg, gameObject);
             }
         }
 
@@ -462,7 +471,7 @@ namespace StarterAssets
             if (hit.point != null && hit.collider != null)
             {
                 
-                PunchHit(hit.point, hit.collider);
+                //PunchHit(hit.point, hit.collider);
             }
             else
             {
@@ -472,13 +481,20 @@ namespace StarterAssets
 
         private void OnDrawGizmos()
         {
+
+
+            Gizmos.DrawSphere(rightShoulder.position, punchRadius);
+            Gizmos.DrawSphere(rightShoulder.position + (punchRange * transform.forward), punchRadius);
+            Gizmos.DrawSphere(leftShoulder.position, punchRadius);
+            Gizmos.DrawSphere(leftShoulder.position + (punchRange * transform.forward), punchRadius);
+
+
             if (_punchRight)
             {
-                
-
                 Gizmos.DrawSphere(rightShoulder.position, punchRadius);
                 Gizmos.DrawSphere(rightShoulder.position + (punchRange * transform.forward), punchRadius);
                 _punchRight = false;
+                Debug.DebugBreak();
             }
 
             if(_punchLeft)
@@ -487,6 +503,16 @@ namespace StarterAssets
                 Gizmos.DrawSphere(leftShoulder.position + (punchRange * transform.forward), punchRadius);
                 _punchLeft = false;
             }
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            Debug.Log($"Hit {hit.gameObject}");
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            Debug.Log($"Collision {collision.gameObject}");
         }
 
         private bool CanStartSlide()
@@ -729,7 +755,7 @@ namespace StarterAssets
                 
             }
 
-            Debug.Log($"speed: {_speed}");
+            // Debug.Log($"speed: {_speed}");
 
             _controller.Move(targetVelocity * Time.deltaTime);
 
@@ -887,6 +913,7 @@ namespace StarterAssets
             return Mathf.Clamp(lfAngle, lfMin, lfMax);
         }
 
+        /*
         private void OnDrawGizmosSelected()
         {
             Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
@@ -899,7 +926,8 @@ namespace StarterAssets
             Gizmos.DrawSphere(
                 new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z),
                 GroundedRadius);
-        }
+        }*/
+
 
         private void OnFootstep(AnimationEvent animationEvent)
         {

@@ -32,6 +32,12 @@ public class HealthSystem : MonoBehaviour
 
     public void RecieveDmg(float rawDmg, GameObject dmgSource)
     {
+        // Don't take dmg if already dead
+        if(_health <= 0)
+        {
+            return;
+        }
+
         float trueDmg = rawDmg / armor;
 
         SetHealth(_health - trueDmg);
