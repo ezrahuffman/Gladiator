@@ -3,6 +3,7 @@ using System.Threading;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
+using UnityEngine.Windows;
 #endif
 
 /* Note: animations are called via the controller for both the character and capsule using animator null checks
@@ -180,8 +181,11 @@ namespace StarterAssets
 
         [Header ("Lock On")]
         [SerializeField] private GameObject LockOnTarget;
-        [SerializeField] private float LockOnStrength;
+        [SerializeField, Range(0f, 1f)] private float LockOnStrength;
         private bool _lockOn;
+        [SerializeField] private bool _aimAssist = true;
+        [SerializeField, Range(0f, 1f)] private float _aimAssistStrength = .8f;
+        [SerializeField] private float _lockOnTargetCloseDistance;
 
         private bool IsCurrentDeviceMouse
         {
@@ -327,7 +331,13 @@ namespace StarterAssets
 
         private void Attack()
         {
-            //TODO: use a different input system
+
+            if((_input.punchRight || _input.punchLeft) && _lockOn)
+            {
+                LockOnAttack();
+            }
+
+            //TODO: try anim canceling instead of queueing attacks
             if (_input.punchRight)
             {
                 if (_hasAnimator)
@@ -356,6 +366,50 @@ namespace StarterAssets
                 _tryToSlide = false; 
             }
             
+        }
+
+        private void LockOnAttack()
+        {
+            if (!_aimAssist || LockOnTarget == null) { return; }
+
+            Vector2 input = _input.move;
+           
+
+            // aim toward target
+            _targetRotation = Mathf.Atan2(input.x, input.y) * Mathf.Rad2Deg +
+                                    _mainCamera.transform.eulerAngles.y;
+            Quaternion lockOnTargetRotation = Quaternion.Euler(new Vector3(0, _targetRotation, 0));
+           
+            Vector3 targetDirection = LockOnTarget.transform.position - transform.position;
+            targetDirection.y = 0f;
+            if (targetDirection.magnitude > 0.1f)
+            {
+                lockOnTargetRotation = Quaternion.LookRotation(targetDirection);
+                //transform.rotation = Quaternion.Slerp(transform.rotation, lockOnTargetRotation, RotationSmoothTime);
+            }
+          
+
+
+
+            _targetRotation = Mathf.LerpAngle(lockOnTargetRotation.eulerAngles.y, _targetRotation, _aimAssistStrength);
+            float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
+                RotationSmoothTime);
+
+            // rotate to face input direction relative to camera position
+            transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+
+
+            // close distance  to target
+            if (targetDirection.magnitude > _lockOnTargetCloseDistance)
+            {
+                Debug.Log("Close distance to target");
+                _controller.Move(targetDirection.normalized * _lockOnTargetCloseDistance); ;
+                //_controller.SimpleMove(targetDirection);
+            }
+
+            // attack target
+            // This returns to the normal attack flow
+            return;
         }
 
         private void PunchRight()
