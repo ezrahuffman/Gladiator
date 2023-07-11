@@ -167,6 +167,7 @@ namespace StarterAssets
 
         private bool _punchRight;
         private bool _punchLeft;
+        private bool _previouslyAttacking;
 
         private bool _tryToCrouch;
         private bool _tryToSlide;
@@ -186,6 +187,7 @@ namespace StarterAssets
         [SerializeField] private bool _aimAssist = true;
         [SerializeField, Range(0f, 1f)] private float _aimAssistStrength = .8f;
         [SerializeField] private float _lockOnTargetCloseDistance;
+
 
         private bool IsCurrentDeviceMouse
         {
@@ -238,13 +240,18 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
 
-           
-
             Crouch();
             JumpAndGravity();
             GroundedCheck();
             Move();
             Attack();
+            SetPreviously();
+        }
+
+        private void SetPreviously()
+        {
+            _previouslyAttacking = IsAttacking();
+            _previouslyGrounded = _controller.isGrounded;
         }
 
         private void Crouch()
@@ -365,7 +372,6 @@ namespace StarterAssets
                 _tryToCrouch = false; 
                 _tryToSlide = false; 
             }
-            
         }
 
         private void LockOnAttack()
@@ -403,8 +409,9 @@ namespace StarterAssets
             if (targetDirection.magnitude > _lockOnTargetCloseDistance)
             {
                 Debug.Log("Close distance to target");
-                _controller.Move(targetDirection.normalized * _lockOnTargetCloseDistance); ;
-                //_controller.SimpleMove(targetDirection);
+                Debug.DrawLine(_controller.transform.position, _controller.transform.position + (targetDirection.normalized * _lockOnTargetCloseDistance), Color.red, 10f);
+                _controller.Move(targetDirection.normalized * _lockOnTargetCloseDistance);
+                _controller.SimpleMove(Vector3.zero); // This is to stop the character from boosting
             }
 
             // attack target
@@ -494,8 +501,23 @@ namespace StarterAssets
             return !_tryToSlide && resetFinished;
         }
 
+        bool IsAttacking()
+        {
+            return  _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingRight") ||
+                    _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingLeft") ||
+                    _input.punchLeft || _input.punchRight;
+        }
+        
+        
+
         private void Move()
         {
+            if (_lockOn && IsAttacking()) {
+                Debug.Log("early return");
+                return; 
+            }
+
+
             if (_input.lockOn)
             {
                 _lockOn = !_lockOn;
@@ -610,6 +632,12 @@ namespace StarterAssets
             // a reference to the players current horizontal velocity
             float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
 
+
+            if (currentHorizontalSpeed > SprintSpeed)
+            {
+                Debug.Log("exceded max speed");
+            }
+            
             float speedOffset = 0.1f;
             float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
 
@@ -636,6 +664,10 @@ namespace StarterAssets
 
             Vector2 input = _input.move;
 
+            if (_previouslyAttacking)
+            {
+                input = Vector2.zero;
+            }
             // Convert the input direction from world space to camera space
             Vector3 cameraForward = _mainCamera.transform.forward;
             cameraForward.y = 0f;
@@ -664,7 +696,7 @@ namespace StarterAssets
             }
             targetVelocity = new Vector3(targetVelocity.x, _verticalVelocity, targetVelocity.z);
 
-
+            
 
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
@@ -846,8 +878,6 @@ namespace StarterAssets
             {
                 _verticalVelocity += Gravity * Time.deltaTime;
             }
-
-            _previouslyGrounded = Grounded;
         }
 
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
