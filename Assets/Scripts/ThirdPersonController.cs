@@ -416,7 +416,7 @@ namespace StarterAssets
             {
                 Debug.Log("Close distance to target");
                 float distanceToPunchRange = targetDirection.magnitude - punchRange;
-                Debug.DrawLine(_controller.transform.position, _controller.transform.position + (targetDirection.normalized * _lockOnTargetCloseDistance), Color.red, 10f);
+                //Debug.DrawLine(_controller.transform.position, _controller.transform.position + (targetDirection.normalized * _lockOnTargetCloseDistance), Color.red, 10f);
                 _controller.Move(targetDirection.normalized * distanceToPunchRange);//_lockOnTargetCloseDistance);
                 _controller.SimpleMove(Vector3.zero); // This is to stop the character from boosting
             }
@@ -446,16 +446,19 @@ namespace StarterAssets
             }
         }
 
-        private void PunchHit(Collision collision)
+        private void PunchHit(Collision collision, Vector3 attackingPos)
         {
 
 
             if (collision == null) { return; }
 
+            
 
             if (collision.gameObject != null && collision.gameObject.GetComponent<HealthSystem>() != null)
             {
-                collision.gameObject.GetComponent<HealthSystem>().RecieveDmg(punchDmg, gameObject);
+                Vector3 hitPos = collision.GetContact(0).point;
+                Vector3 forceDir = hitPos - attackingPos;
+                collision.gameObject.GetComponent<HealthSystem>().RecieveDmg(punchDmg, gameObject, forceDir.normalized, hitPos);
             }
         }
 

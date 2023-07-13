@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Hand : MonoBehaviour
 {
-    public delegate void HandCollision(Collision collision);
+    public delegate void HandCollision(Collision collision, Vector3 handPos);
     public HandCollision OnHandCollision;
 
     
@@ -12,6 +12,6 @@ public class Hand : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         Debug.Log($"Hand collided with {collision.gameObject.name}");
-        OnHandCollision?.Invoke(collision);
+        OnHandCollision?.Invoke(collision, transform.position);
     }
 }

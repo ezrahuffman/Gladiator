@@ -15,7 +15,7 @@ public class HealthSystem : MonoBehaviour
     [Tooltip("Armor mitigates dmg (currently all dmg is mitigated)")]
     public float armor = 1f;
 
-    public delegate void OnTakeDmg(float trueDmg, GameObject dmgSource);
+    public delegate void OnTakeDmg(float trueDmg, GameObject dmgSource, Vector3 forceDir, Vector3 hitPos);
     public OnTakeDmg onTakeDmg;
 
     public delegate void OnReducedToNoHealth(HealthSystem healthSystem);
@@ -30,7 +30,7 @@ public class HealthSystem : MonoBehaviour
     }
 
 
-    public void RecieveDmg(float rawDmg, GameObject dmgSource)
+    public void RecieveDmg(float rawDmg, GameObject dmgSource, Vector3 forceDir, Vector3 hitPos)
     {
         // Don't take dmg if already dead
         if(_health <= 0)
@@ -44,7 +44,7 @@ public class HealthSystem : MonoBehaviour
 
         if(onTakeDmg != null)
         {
-            onTakeDmg.Invoke(trueDmg, dmgSource);
+            onTakeDmg.Invoke(trueDmg, dmgSource, forceDir, hitPos);
         }
         
     }
