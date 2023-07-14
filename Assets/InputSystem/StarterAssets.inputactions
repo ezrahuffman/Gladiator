@@ -94,6 +94,15 @@
                     "processors": "",
                     "interactions": "Press",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "KickModifier",
+                    "type": "Button",
+                    "id": "24ffe082-85d0-4de0-9f4c-4cb27d18a053",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press(behavior=2)",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -413,6 +422,17 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "LockOn",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ed63d4ce-52fe-436a-9dda-deb0ee1764f2",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "KickModifier",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

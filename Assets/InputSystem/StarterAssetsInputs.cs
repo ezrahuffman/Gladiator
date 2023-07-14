@@ -4,6 +4,7 @@ using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
+using static UnityEngine.Rendering.DebugUI;
 #endif
 
 namespace StarterAssets
@@ -21,6 +22,7 @@ namespace StarterAssets
 		public bool flipJump;
 		public bool roll;
 		public bool lockOn;
+		public bool isModified;
 
 
 
@@ -77,6 +79,11 @@ namespace StarterAssets
 			}
 		}
 
+		public void OnKickModifier(InputValue value)
+		{
+            KickModifierInput(value.isPressed);
+        }
+
 		public void OnRoll(InputValue value)
 		{
 			RollInput(value.isPressed);
@@ -102,9 +109,12 @@ namespace StarterAssets
 		public void OnPunchLeft(InputValue inputValue) 
 		{
 			PunchLeftInput(inputValue.isPressed);
-		}
+        }
 
-		public void OnSprint(InputValue value)
+       
+
+
+        public void OnSprint(InputValue value)
 		{
 			SprintInput(value.isPressed);
 		}
@@ -119,6 +129,12 @@ namespace StarterAssets
         {
             lockOn = isPressed;
         }
+
+		private void KickModifierInput(bool isPressed)
+		{
+			isModified = isPressed;
+		}
+
 
 
         public void MoveInput(Vector2 newMoveDirection)

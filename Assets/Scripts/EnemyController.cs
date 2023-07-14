@@ -46,16 +46,40 @@ public class EnemyController : MonoBehaviour
         }
 
         Vector3 targetPos = closestContraint.data.target.position;
-        Debug.DrawLine(targetPos, targetPos + forceDir * 3, Color.red, 10f);
+        Ik_Maxs ik_Max = closestContraint.gameObject.GetComponent<Ik_Maxs>();
+        Vector3 displacement = forceDir * _forceFactor * dmg;
+        displacement = ik_Max == null ? displacement : GetLimitedDisplacement(displacement, ik_Max);
+        Debug.DrawLine(targetPos, targetPos + displacement, Color.red, 10f);
         Debug.Log($"Took ${dmg} from ${dmgSource}, targetPos = {targetPos}, forceDir: {forceDir}]");
 
 
         // This probably needs to be smoothed instead of instantanious 
-        StartCoroutine(LerpToTargetAndBack(closestContraint.data.target, targetPos + forceDir * dmg * _forceFactor, _reactionLerpTime));
+        StartCoroutine(LerpToTargetAndBack(closestContraint.data.target, targetPos + displacement, _reactionLerpTime));
         //if(_hasAnimator)
         //{
         //    _animator.SetTrigger(_animIDHitTrigger);
         //}
+    }
+
+    protected Vector3 GetLimitedDisplacement(Vector3 originalDisplacement, Ik_Maxs ikMax)
+    {
+        DisplacementHelper(ref originalDisplacement.x, ikMax.max_x, ikMax.min_x);
+        DisplacementHelper(ref originalDisplacement.y, ikMax.max_y, ikMax.min_y);
+        DisplacementHelper(ref originalDisplacement.z, ikMax.max_z, ikMax.min_z);
+
+        return originalDisplacement;
+    }
+
+    protected void DisplacementHelper(ref float original, float max, float min)
+    {
+        if (original > 0)
+        {
+            original = Mathf.Min(original, max);
+        }
+        else
+        {
+            original = Mathf.Max(original, min);
+        }
     }
 
     IEnumerator LerpToTargetAndBack(Transform transToMove, Vector3 targetPos, float lerpTime)

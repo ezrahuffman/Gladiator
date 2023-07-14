@@ -100,6 +100,8 @@ namespace StarterAssets
 
         [SerializeField] private Hand _leftHand;
         [SerializeField] private Hand _rightHand;
+        [SerializeField] private Hand _leftFoot;
+        [SerializeField] private Hand _rightFoot;
 
        
 
@@ -148,6 +150,8 @@ namespace StarterAssets
         private int _animIDMotionSpeed;
         private int _animIDRightPunchTrigger;
         private int _animIDLeftPunchTrigger;
+        private int _animIDRightKickTrigger;
+        private int _animIDLeftKickTrigger;
         private int _animIDHitTrigger;
         private int _animIDCrouch;
         private int _animIDSlide;
@@ -215,6 +219,8 @@ namespace StarterAssets
 
             _rightHand.OnHandCollision += PunchHit;
             _leftHand.OnHandCollision += PunchHit;
+            _rightFoot.OnHandCollision += PunchHit;
+            _leftFoot.OnHandCollision += PunchHit;
         }
 
         private void Start()
@@ -257,7 +263,7 @@ namespace StarterAssets
         private void SetPreviously()
         {
             _previouslyAttacking = IsAttacking();
-            _previouslyGrounded = _controller.isGrounded;
+            _previouslyGrounded = Grounded;
         }
 
         private void Crouch()
@@ -300,6 +306,8 @@ namespace StarterAssets
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
             _animIDRightPunchTrigger = Animator.StringToHash("PunchRightTrigger");
             _animIDLeftPunchTrigger = Animator.StringToHash("PunchLeftTrigger");
+            _animIDRightKickTrigger = Animator.StringToHash("KickRightTrigger");
+            _animIDLeftKickTrigger = Animator.StringToHash("KickLeftTrigger");
             _animIDCrouch = Animator.StringToHash("Crouch");
             _animIDSlide = Animator.StringToHash("Slide");
             _animIDFlip = Animator.StringToHash("Flip");
@@ -353,9 +361,11 @@ namespace StarterAssets
             //TODO: try anim canceling instead of queueing attacks
             if (_input.punchRight)
             {
+                int trigger = _input.isModified ? _animIDRightKickTrigger : _animIDRightPunchTrigger;
+
                 if (_hasAnimator)
                 {
-                    _animator.SetTrigger(_animIDRightPunchTrigger);
+                    _animator.SetTrigger(trigger);
                     _animator.SetBool(_animIDCrouch, false);
                     _animator.SetBool(_animIDSlide, false);
                 }
@@ -367,10 +377,14 @@ namespace StarterAssets
             }
             else if (_input.punchLeft)
             {
+                int trigger = _input.isModified ? _animIDLeftKickTrigger : _animIDLeftPunchTrigger;
+
+
                 if (_hasAnimator)
                 {
-                    _animator.SetTrigger(_animIDLeftPunchTrigger);
+                    _animator.SetTrigger(trigger);
                     _animator.SetBool(_animIDCrouch, false);
+                    _animator.SetBool(_animIDSlide, false);
                 }
                 //PunchLeft();
                 _punchLeft = true; // This is used for drawing debug sphere for punch
@@ -506,16 +520,6 @@ namespace StarterAssets
                 Gizmos.DrawSphere(leftShoulder.position + (punchRange * transform.forward), punchRadius);
                 _punchLeft = false;
             }
-        }
-
-        private void OnControllerColliderHit(ControllerColliderHit hit)
-        {
-            Debug.Log($"Hit {hit.gameObject}");
-        }
-
-        private void OnCollisionEnter(Collision collision)
-        {
-            Debug.Log($"Collision {collision.gameObject}");
         }
 
         private bool CanStartSlide()
@@ -661,11 +665,6 @@ namespace StarterAssets
             // a reference to the players current horizontal velocity
             float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
 
-
-            if (currentHorizontalSpeed > SprintSpeed)
-            {
-                Debug.Log("exceded max speed");
-            }
             
             float speedOffset = 0.1f;
             float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
@@ -723,9 +722,7 @@ namespace StarterAssets
                 Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
                 targetVelocity = targetDirection * _speed;
             }
-            targetVelocity = new Vector3(targetVelocity.x, _verticalVelocity, targetVelocity.z);
-
-            
+            targetVelocity = new Vector3(targetVelocity.x, _verticalVelocity, targetVelocity.z);            
 
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
@@ -897,9 +894,9 @@ namespace StarterAssets
                     }
                 }
 
-                //// if we are not grounded, do not jump
-                //_input.jump = false;
-                //_input.flipJump = false;
+                // if we are not grounded, do not jump
+                _input.jump = false;
+                _input.flipJump = false;
             }
 
             // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)

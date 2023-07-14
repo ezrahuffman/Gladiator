@@ -11,7 +11,11 @@ public class Hand : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log($"Hand collided with {collision.gameObject.name}");
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            return;
+        }
+
         OnHandCollision?.Invoke(collision, transform.position);
     }
 }
