@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -24,6 +25,11 @@ public class HealthSystem : MonoBehaviour
     public delegate void OnHealthChanged(float maxHealth, float currHealth);
     public OnHealthChanged onHealthChanged;
 
+    [Tooltip("The time in seconds before the same attack can deal dmg. Meant to stop unintended multiple hits from single attacks.")]
+    [SerializeField] private float _attackTimeOut = 0.5f;
+
+    protected HashSet<GameObject> _attackers = new HashSet<GameObject>();
+
     private void Start()
     {
         _health = maxHealth;
@@ -38,15 +44,27 @@ public class HealthSystem : MonoBehaviour
             return;
         }
 
+       // Don't take dmg from same source twice in a row
+       if(_attackers.Contains(dmgSource))
+        {
+            return;
+        }
+       _attackers.Add(dmgSource);
+
         float trueDmg = rawDmg / armor;
 
         SetHealth(_health - trueDmg);
 
-        if(onTakeDmg != null)
-        {
-            onTakeDmg.Invoke(trueDmg, dmgSource, forceDir, hitPos);
-        }
+        onTakeDmg?.Invoke(trueDmg, dmgSource, forceDir, hitPos);
+       
+
+        Invoke(nameof(RemoveAttacker), _attackTimeOut);
         
+    }
+
+    private void RemoveAttacker()
+    {
+        _attackers.Clear();
     }
 
     private void SetHealth(float value) 
