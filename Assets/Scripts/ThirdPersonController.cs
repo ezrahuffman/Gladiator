@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
 using UnityEngine.Windows;
@@ -98,10 +101,10 @@ namespace StarterAssets
         [Tooltip("Transform of the character's left shoulder")]
         public Transform leftShoulder;
 
-        [SerializeField] private Hand _leftHand;
-        [SerializeField] private Hand _rightHand;
-        [SerializeField] private Hand _leftFoot;
-        [SerializeField] private Hand _rightFoot;
+        [SerializeField] private Weapon _leftHand;
+        [SerializeField] private Weapon _rightHand;
+        [SerializeField] private Weapon _leftFoot;
+        [SerializeField] private Weapon _rightFoot;
 
        
 
@@ -157,6 +160,10 @@ namespace StarterAssets
         private int _animIDSlide;
         private int _animIDFlip;
         private int _animIDRoll;
+
+        private int _animStateIDIdle;
+
+        public Vector3 WatchTargetVelocity;
 
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
@@ -217,10 +224,10 @@ namespace StarterAssets
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
             }
 
-            _rightHand.OnHandCollision += PunchHit;
-            _leftHand.OnHandCollision += PunchHit;
-            _rightFoot.OnHandCollision += PunchHit;
-            _leftFoot.OnHandCollision += PunchHit;
+            _rightHand.OnWeaponCollision += PunchHit;
+            _leftHand.OnWeaponCollision += PunchHit;
+            _rightFoot.OnWeaponCollision += PunchHit;
+            _leftFoot.OnWeaponCollision += PunchHit;
         }
 
         private void Start()
@@ -312,6 +319,8 @@ namespace StarterAssets
             _animIDSlide = Animator.StringToHash("Slide");
             _animIDFlip = Animator.StringToHash("Flip");
             _animIDRoll = Animator.StringToHash("Roll");
+
+            _animStateIDIdle = Animator.StringToHash("Idle Walk Run Blend");
         }
 
         private void GroundedCheck()
@@ -460,20 +469,65 @@ namespace StarterAssets
             }
         }
 
-        private void PunchHit(Collision collision, Vector3 attackingPos)
+        private void PunchHit(Collision collision, Vector3 attackingPos, Weapon weapon)
         {
 
 
-            if (collision == null) { return; }
+            if (collision == null /*|| !IsAttacking()*/) { return; }
 
             
+            //// Get the ik target & default pos for this hand
+            //TwoBoneIKConstraint iKConstraint = weapon.IK;
+            //Vector3 defaultRelativePos = weapon.IK_TargetOriginalPos;
 
+            //// Set ik weight to 1
+            //iKConstraint.weight = 1;
+
+
+            //// Lerp ik target back to default position
+            //iKConstraint.data.target.position = attackingPos;
+            //StartCoroutine(
+            //    LerpToTarget(iKConstraint, defaultRelativePos, weapon.animRecoveryTime));
+            
             if (collision.gameObject != null && collision.gameObject.GetComponent<HealthSystem>() != null)
             {
                 Vector3 hitPos = collision.GetContact(0).point;
                 Vector3 forceDir = hitPos - attackingPos;
                 collision.gameObject.GetComponent<HealthSystem>().RecieveDmg(punchDmg, gameObject, forceDir.normalized, hitPos);
             }
+
+            _animator.CrossFadeInFixedTime(_animStateIDIdle, 0.1f);
+        }
+
+        IEnumerator LerpToTarget(TwoBoneIKConstraint iKConstraint, Vector3 targetPos, float lerpTime)
+        {
+            Transform transToMove = iKConstraint.data.target;
+            float time = 0;
+            Vector3 startPos = transToMove.position;
+            while (time < lerpTime)
+            {
+                transToMove.position = Vector3.Lerp(startPos, targetPos + transform.position, time / lerpTime);
+                time += Time.deltaTime;
+                iKConstraint.weight =1 -  (time / lerpTime);
+                yield return null;
+            }
+            transToMove.position = targetPos + transform.position;
+            iKConstraint.weight = 0;
+        }
+
+        private bool isPunching()
+        {// test why this is returning true when not punching
+            bool animRight = _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingRight");
+            bool animLeft = _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingLeft");
+
+            return _input.punchRight || _input.punchLeft ||
+                animRight || animLeft;
+        }
+
+        private bool isKicking()
+        {
+            return _animator.GetCurrentAnimatorStateInfo(0).IsName("LeftKick") ||
+                _animator.GetCurrentAnimatorStateInfo(0).IsName("RightKick");
         }
 
         private void PunchLeft()
@@ -536,9 +590,9 @@ namespace StarterAssets
 
         bool IsAttacking()
         {
-            return  _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingRight") ||
-                    _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingLeft") ||
-                    _input.punchLeft || _input.punchRight;
+            //TODO: add kicks to this check
+
+            return isPunching() || isKicking();
         }
         
         
@@ -689,7 +743,7 @@ namespace StarterAssets
             _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
             if (_animationBlend < 0.01f) _animationBlend = 0f;
 
-
+            WatchTargetVelocity = _input.move;
             Vector2 input = _input.move;
 
             if (_previouslyAttacking)
@@ -705,6 +759,7 @@ namespace StarterAssets
             cameraRight.y = 0f;
             cameraRight.Normalize();
 
+            
             Vector3 localInput = cameraForward * input.y + cameraRight * input.x;
 
             // Normalize the input direction to ensure consistent movement speed
@@ -755,8 +810,8 @@ namespace StarterAssets
                 
             }
 
-            // Debug.Log($"speed: {_speed}");
 
+            //WatchTargetVelocity = targetVelocity;
             _controller.Move(targetVelocity * Time.deltaTime);
 
             

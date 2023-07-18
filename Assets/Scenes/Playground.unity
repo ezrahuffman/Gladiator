@@ -364,7 +364,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aeda7bfbf984f2a4da5ab4b8967b115d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Weight: 1
+  m_Weight: 0
   m_Data:
     m_Root: {fileID: 2143241895}
     m_Mid: {fileID: 609972449}
@@ -688,6 +688,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2090444848, guid: ddace20d0680af84a8142cda47d38bb4, type: 3}
+      propertyPath: _attackTimeOut
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3893294197879345259, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
       propertyPath: m_RootOrder
@@ -1037,7 +1041,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aeda7bfbf984f2a4da5ab4b8967b115d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Weight: 1
+  m_Weight: 0
   m_Data:
     m_Root: {fileID: 950671271}
     m_Mid: {fileID: 2099813138}
@@ -1499,7 +1503,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aeda7bfbf984f2a4da5ab4b8967b115d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Weight: 1
+  m_Weight: 0
   m_Data:
     m_Root: {fileID: 422565839}
     m_Mid: {fileID: 759648270}
@@ -1874,7 +1878,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aeda7bfbf984f2a4da5ab4b8967b115d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Weight: 1
+  m_Weight: 0
   m_Data:
     m_Root: {fileID: 398488800}
     m_Mid: {fileID: 878314103}
@@ -2769,6 +2773,74 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 48960244, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK
+      value: 
+      objectReference: {fileID: 356756696}
+    - target: {fileID: 48960244, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: playerTrans
+      value: 
+      objectReference: {fileID: 1762682263}
+    - target: {fileID: 48960244, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK_TargetOriginalPos.x
+      value: 0.0000013884855
+      objectReference: {fileID: 0}
+    - target: {fileID: 48960244, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK_TargetOriginalPos.y
+      value: -0.24036379
+      objectReference: {fileID: 0}
+    - target: {fileID: 48960244, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK_TargetOriginalPos.z
+      value: 0.000001790002
+      objectReference: {fileID: 0}
+    - target: {fileID: 889437585, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK
+      value: 
+      objectReference: {fileID: 1063267155}
+    - target: {fileID: 889437585, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: playerTrans
+      value: 
+      objectReference: {fileID: 1762682263}
+    - target: {fileID: 889437585, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: animRecoveryTime
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 967055807, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK
+      value: 
+      objectReference: {fileID: 1224391860}
+    - target: {fileID: 967055807, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: playerTrans
+      value: 
+      objectReference: {fileID: 1762682263}
+    - target: {fileID: 967055807, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK_TargetTrans
+      value: 
+      objectReference: {fileID: 1466561677}
+    - target: {fileID: 967055807, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK_TargetOriginalPos.x
+      value: -0.00000006810296
+      objectReference: {fileID: 0}
+    - target: {fileID: 967055807, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK_TargetOriginalPos.y
+      value: 0.24036227
+      objectReference: {fileID: 0}
+    - target: {fileID: 967055807, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK_TargetOriginalPos.z
+      value: 0.000000009160431
+      objectReference: {fileID: 0}
+    - target: {fileID: 1873014142, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: IK
+      value: 
+      objectReference: {fileID: 842108799}
+    - target: {fileID: 1873014142, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: playerTrans
+      value: 
+      objectReference: {fileID: 1762682263}
+    - target: {fileID: 1873014142, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: animRecoveryTime
+      value: 0.7
+      objectReference: {fileID: 0}
     - target: {fileID: 122036865199361367, guid: 64dce48905ffd9b4293e595fa6941544,
         type: 3}
       propertyPath: m_Layer
