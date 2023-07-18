@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
-using UnityEngine.Animations.Rigging;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
-using UnityEngine.Windows;
 #endif
 
 /* Note: animations are called via the controller for both the character and capsule using animator null checks
@@ -155,15 +150,12 @@ namespace StarterAssets
         private int _animIDLeftPunchTrigger;
         private int _animIDRightKickTrigger;
         private int _animIDLeftKickTrigger;
-        private int _animIDHitTrigger;
         private int _animIDCrouch;
         private int _animIDSlide;
         private int _animIDFlip;
         private int _animIDRoll;
 
         private int _animStateIDIdle;
-
-        public Vector3 WatchTargetVelocity;
 
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
@@ -179,8 +171,6 @@ namespace StarterAssets
 
         private bool _hasAnimator;
 
-        private bool _punchRight;
-        private bool _punchLeft;
         private bool _previouslyAttacking;
 
         private bool _tryToCrouch;
@@ -378,8 +368,6 @@ namespace StarterAssets
                     _animator.SetBool(_animIDCrouch, false);
                     _animator.SetBool(_animIDSlide, false);
                 }
-                //PunchRight();
-                _punchRight = true; // This is used for drawing debug sphere for punch
                 _input.punchRight = false;
                 _tryToCrouch = false;
                 _tryToSlide = false;
@@ -395,8 +383,6 @@ namespace StarterAssets
                     _animator.SetBool(_animIDCrouch, false);
                     _animator.SetBool(_animIDSlide, false);
                 }
-                //PunchLeft();
-                _punchLeft = true; // This is used for drawing debug sphere for punch
                 _input.punchLeft = false;
                 _tryToCrouch = false; 
                 _tryToSlide = false; 
@@ -449,45 +435,12 @@ namespace StarterAssets
             return;
         }
 
-        private void PunchRight()
-        {
-            Ray ray = new Ray(rightShoulder.position, transform.forward);
-            RaycastHit hit;
-            //Generate cast from right shoulder of character
-            Physics.SphereCast(ray, punchRadius, out hit, punchRange);
-
-            
-            //See if we hit anything special
-            if(hit.collider != null)
-            {
-                Debug.Log($"Right Punched {hit.collider.gameObject}");
-                //PunchHit(hit.point, hit.collider);
-            }
-            else
-            {
-                Debug.Log("Missed Right Punch");
-            }
-        }
-
         private void PunchHit(Collision collision, Vector3 attackingPos, Weapon weapon)
         {
 
 
             if (collision == null /*|| !IsAttacking()*/) { return; }
 
-            
-            //// Get the ik target & default pos for this hand
-            //TwoBoneIKConstraint iKConstraint = weapon.IK;
-            //Vector3 defaultRelativePos = weapon.IK_TargetOriginalPos;
-
-            //// Set ik weight to 1
-            //iKConstraint.weight = 1;
-
-
-            //// Lerp ik target back to default position
-            //iKConstraint.data.target.position = attackingPos;
-            //StartCoroutine(
-            //    LerpToTarget(iKConstraint, defaultRelativePos, weapon.animRecoveryTime));
             
             if (collision.gameObject != null && collision.gameObject.GetComponent<HealthSystem>() != null)
             {
@@ -497,22 +450,6 @@ namespace StarterAssets
             }
 
             _animator.CrossFadeInFixedTime(_animStateIDIdle, 0.1f);
-        }
-
-        IEnumerator LerpToTarget(TwoBoneIKConstraint iKConstraint, Vector3 targetPos, float lerpTime)
-        {
-            Transform transToMove = iKConstraint.data.target;
-            float time = 0;
-            Vector3 startPos = transToMove.position;
-            while (time < lerpTime)
-            {
-                transToMove.position = Vector3.Lerp(startPos, targetPos + transform.position, time / lerpTime);
-                time += Time.deltaTime;
-                iKConstraint.weight =1 -  (time / lerpTime);
-                yield return null;
-            }
-            transToMove.position = targetPos + transform.position;
-            iKConstraint.weight = 0;
         }
 
         private bool isPunching()
@@ -528,52 +465,6 @@ namespace StarterAssets
         {
             return _animator.GetCurrentAnimatorStateInfo(0).IsName("LeftKick") ||
                 _animator.GetCurrentAnimatorStateInfo(0).IsName("RightKick");
-        }
-
-        private void PunchLeft()
-        {
-            Ray ray = new Ray(leftShoulder.position, transform.forward);
-            RaycastHit hit;
-            //Generate cast from right shoulder of character
-            Physics.SphereCast(ray, punchRadius, out hit, punchRange);
-
-
-            //See if we hit anything special
-            if (hit.point != null && hit.collider != null)
-            {
-                
-                //PunchHit(hit.point, hit.collider);
-            }
-            else
-            {
-                Debug.Log("Missed Left Punch");
-            }
-        }
-
-        private void OnDrawGizmos()
-        {
-
-
-            Gizmos.DrawSphere(rightShoulder.position, punchRadius);
-            Gizmos.DrawSphere(rightShoulder.position + (punchRange * transform.forward), punchRadius);
-            Gizmos.DrawSphere(leftShoulder.position, punchRadius);
-            Gizmos.DrawSphere(leftShoulder.position + (punchRange * transform.forward), punchRadius);
-
-
-            if (_punchRight)
-            {
-                Gizmos.DrawSphere(rightShoulder.position, punchRadius);
-                Gizmos.DrawSphere(rightShoulder.position + (punchRange * transform.forward), punchRadius);
-                _punchRight = false;
-                Debug.DebugBreak();
-            }
-
-            if(_punchLeft)
-            {
-                Gizmos.DrawSphere(leftShoulder.position, punchRadius);
-                Gizmos.DrawSphere(leftShoulder.position + (punchRange * transform.forward), punchRadius);
-                _punchLeft = false;
-            }
         }
 
         private bool CanStartSlide()
@@ -652,24 +543,13 @@ namespace StarterAssets
             }
             float targetSpeed;
 
-            // TODO: this is horrible, split into functions to make more readable
             if (_tryToRoll || _tryToSlide)
             {
                 if (_tryToRoll)
                 {
                     targetSpeed = rollSpeed;
 
-                    _rollTimer += Time.deltaTime;
-
-                    _tryToRoll = _rollTimer < rollDuration;
-
-                    Debug.Log($"_rollTimer == {_rollTimer}, rollDurration = {rollDuration}");
-                    if (!_tryToRoll)
-                    {
-                        _controller.height = _standingHeight;
-                        _controller.center = new Vector3(0, _standingHeight / 2, 0);
-                        _rollResetTimer = 0;
-                    }
+                    HandleRoll();
                 }
 
                 // Only continue sliding if still crouching (not a toggle atm)
@@ -677,21 +557,7 @@ namespace StarterAssets
                 else // _tryToSlide == true --> run sliding logic
                 {
                     targetSpeed = slideSpeed;
-
-                    //CHATGPT ANSWER HERE
-                    _slideTimer += Time.deltaTime;
-
-                    // cancle if timer runs out or player isn't holding crouch anymore
-                    _tryToSlide = _slideTimer >= slideDuration ? false : _tryToCrouch;
-
-                    if (!_tryToSlide)
-                    {
-                        Debug.Log("reset collider");
-                        // reset collider dimensions
-                        _controller.height = _standingHeight;
-                        _controller.center = new Vector3(0, _standingHeight / 2, 0);
-                        _slideResetTimer = 0;
-                    }
+                    HandleSlide();
                 }
             }
             else {
@@ -707,8 +573,6 @@ namespace StarterAssets
                     // limit speed to crouch speed
                     Math.Clamp(targetSpeed, targetSpeed, 6f); //TODO: creat variable for crouch speed
                 }
-
-                // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
                 // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
                 // if there is no input, set the target speed to 0
@@ -743,7 +607,6 @@ namespace StarterAssets
             _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
             if (_animationBlend < 0.01f) _animationBlend = 0f;
 
-            WatchTargetVelocity = _input.move;
             Vector2 input = _input.move;
 
             if (_previouslyAttacking)
@@ -781,7 +644,7 @@ namespace StarterAssets
 
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
-            if (/*input != Vector2.zero && */!_tryToSlide && !_tryToRoll)
+            if (!_tryToSlide && !_tryToRoll)
             {
                 _targetRotation = Mathf.Atan2(input.x, input.y) * Mathf.Rad2Deg +
                                     _mainCamera.transform.eulerAngles.y;
@@ -796,10 +659,8 @@ namespace StarterAssets
                         //transform.rotation = Quaternion.Slerp(transform.rotation, lockOnTargetRotation, RotationSmoothTime);
                     }
 
-                    // TODO this condition doesn't brake tha game
+                    // TODO: check this condition doesn't brake the game
                 }
-                
-
 
                 _targetRotation = Mathf.LerpAngle(lockOnTargetRotation.eulerAngles.y, _targetRotation, LockOnStrength);
                 float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
@@ -807,7 +668,6 @@ namespace StarterAssets
 
                 // rotate to face input direction relative to camera position
                 transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-                
             }
 
 
@@ -823,6 +683,39 @@ namespace StarterAssets
                 _animator.SetBool(_animIDCrouch, _tryToCrouch);
                 _animator.SetBool(_animIDSlide, _tryToSlide);
                 _animator.SetBool(_animIDRoll, _tryToRoll);
+            }
+        }
+
+        private void HandleSlide()
+        {
+            //CHATGPT ANSWER HERE
+            _slideTimer += Time.deltaTime;
+
+            // cancle if timer runs out or player isn't holding crouch anymore
+            _tryToSlide = _slideTimer >= slideDuration ? false : _tryToCrouch;
+
+            if (!_tryToSlide)
+            {
+                Debug.Log("reset collider");
+                // reset collider dimensions
+                _controller.height = _standingHeight;
+                _controller.center = new Vector3(0, _standingHeight / 2, 0);
+                _slideResetTimer = 0;
+            }
+        }
+
+        private void HandleRoll()
+        {
+            _rollTimer += Time.deltaTime;
+
+            _tryToRoll = _rollTimer < rollDuration;
+
+            Debug.Log($"_rollTimer == {_rollTimer}, rollDurration = {rollDuration}");
+            if (!_tryToRoll)
+            {
+                _controller.height = _standingHeight;
+                _controller.center = new Vector3(0, _standingHeight / 2, 0);
+                _rollResetTimer = 0;
             }
         }
 
@@ -917,12 +810,6 @@ namespace StarterAssets
                 _jumpTimeoutDelta = JumpTimeout;
                 bool flipJumping = _animator.GetBool(_animIDFlip);
 
-                //if(_hasAnimator && !flipJumping && _input.flipJump && FallTimeout - _fallTimeoutDelta < _timeToFlipJump)
-                //{
-                //    Debug.Log("flip jump while jumping");
-                //    _animator.SetBool(_animIDFlip, true);   
-                //}
-
                 // if we are currently flip jumping
                 if (_hasAnimator && flipJumping)
                 {
@@ -967,21 +854,6 @@ namespace StarterAssets
             if (lfAngle > 360f) lfAngle -= 360f;
             return Mathf.Clamp(lfAngle, lfMin, lfMax);
         }
-
-        /*
-        private void OnDrawGizmosSelected()
-        {
-            Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
-            Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
-
-            if (Grounded) Gizmos.color = transparentGreen;
-            else Gizmos.color = transparentRed;
-
-            // when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
-            Gizmos.DrawSphere(
-                new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z),
-                GroundedRadius);
-        }*/
 
 
         private void OnFootstep(AnimationEvent animationEvent)
