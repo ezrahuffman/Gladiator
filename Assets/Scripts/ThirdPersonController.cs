@@ -90,12 +90,6 @@ namespace StarterAssets
         [Tooltip("For locking the camera position on all axis")]
         public bool LockCameraPosition = false;
 
-        [Tooltip("Transform of the character's right shoulder")]
-        public Transform rightShoulder;
-
-        [Tooltip("Transform of the character's left shoulder")]
-        public Transform leftShoulder;
-
         [SerializeField] private Weapon _leftHand;
         [SerializeField] private Weapon _rightHand;
         [SerializeField] private Weapon _leftFoot;
@@ -163,7 +157,8 @@ namespace StarterAssets
 #endif
         private Animator _animator;
         private CharacterController _controller;
-        private StarterAssetsInputs _input;
+        private StarterAssetsInputs _starterAssetInputs;
+        protected InputWrapper _input;
         private GameObject _mainCamera;
         
         
@@ -187,11 +182,10 @@ namespace StarterAssets
         [Header ("Lock On")]
         [SerializeField] private GameObject LockOnTarget;
         [SerializeField, Range(0f, 1f)] private float LockOnStrength;
-        private bool _lockOn;
+        protected bool _lockOn;
         [SerializeField] private bool _aimAssist = true;
         [SerializeField, Range(0f, 1f)] private float _aimAssistStrength = .8f;
         [SerializeField] private float _lockOnTargetCloseDistance;
-
 
         private bool IsCurrentDeviceMouse
         {
@@ -208,8 +202,8 @@ namespace StarterAssets
 
         private void Awake()
         {
-            // get a reference to our main camera
-            if (_mainCamera == null)
+            // get a reference to our main camera unless we are an enemy
+            if (_mainCamera == null && !gameObject.CompareTag("Enemy"))
             {
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
             }
@@ -222,11 +216,25 @@ namespace StarterAssets
 
         private void Start()
         {
+            ClassStart();
+        }
+
+        public virtual void ClassStart()
+        {
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
-            
+
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
-            _input = GetComponent<StarterAssetsInputs>();
+            _starterAssetInputs = GetComponent<StarterAssetsInputs>();
+
+            if (_starterAssetInputs != null)
+            {
+                _input = new InputWrapper(_starterAssetInputs);
+            }
+            else
+            {
+                _input = new InputWrapper();
+            }
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
             _playerInput = GetComponent<PlayerInput>();
 #else
@@ -242,11 +250,18 @@ namespace StarterAssets
             _rollResetTimer = rollResetDuration;
 
             _standingCenter = _controller.center;
-            _standingHeight = _controller.height; 
+            _standingHeight = _controller.height;
         }
 
         private void Update()
         {
+            ClassUpdate();
+        }
+
+        public virtual void ClassUpdate()
+        {
+            SetInputs();
+
             _hasAnimator = TryGetComponent(out _animator);
 
             Crouch();
@@ -255,6 +270,11 @@ namespace StarterAssets
             Move();
             Attack();
             SetPreviously();
+        }
+
+        public virtual void SetInputs()
+        {
+            _input.SetInputs(_starterAssetInputs);
         }
 
         private void SetPreviously()
@@ -266,12 +286,12 @@ namespace StarterAssets
         private void Crouch()
         {
             bool currCrouch = _tryToCrouch;
-            _tryToCrouch = _input.crouch;
+            _tryToCrouch = _input.Crouch;
             if (_hasAnimator)
             {
                 _animator.SetBool(_animIDCrouch, _tryToCrouch);
             }
-            if (_input.crouch && !_tryToSlide)
+            if (_input.Crouch && !_tryToSlide)
             {
                 // Crouch
                 _controller.height = CrouchHeight;
@@ -331,13 +351,13 @@ namespace StarterAssets
         private void CameraRotation()
         {
             // if there is an input and camera position is not fixed
-            if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
+            if (_input.Look.sqrMagnitude >= _threshold && !LockCameraPosition)
             {
                 //Don't multiply mouse input by Time.deltaTime;
                 float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
 
-                _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier;
-                _cinemachineTargetPitch += _input.look.y * deltaTimeMultiplier;
+                _cinemachineTargetYaw += _input.Look.x * deltaTimeMultiplier;
+                _cinemachineTargetPitch += _input.Look.y * deltaTimeMultiplier;
             }
 
             // clamp our rotations so our values are limited 360 degrees
@@ -352,15 +372,15 @@ namespace StarterAssets
         private void Attack()
         {
 
-            if((_input.punchRight || _input.punchLeft) && _lockOn)
+            if((_input.PunchRight || _input.PunchLeft) && _lockOn)
             {
                 LockOnAttack();
             }
 
             //TODO: try anim canceling instead of queueing attacks
-            if (_input.punchRight)
+            if (_input.PunchRight)
             {
-                int trigger = _input.isModified ? _animIDRightKickTrigger : _animIDRightPunchTrigger;
+                int trigger = _input.IsModified ? _animIDRightKickTrigger : _animIDRightPunchTrigger;
 
                 if (_hasAnimator)
                 {
@@ -368,13 +388,13 @@ namespace StarterAssets
                     _animator.SetBool(_animIDCrouch, false);
                     _animator.SetBool(_animIDSlide, false);
                 }
-                _input.punchRight = false;
+                _input.PunchRight = false;
                 _tryToCrouch = false;
                 _tryToSlide = false;
             }
-            else if (_input.punchLeft)
+            else if (_input.PunchLeft)
             {
-                int trigger = _input.isModified ? _animIDLeftKickTrigger : _animIDLeftPunchTrigger;
+                int trigger = _input.IsModified ? _animIDLeftKickTrigger : _animIDLeftPunchTrigger;
 
 
                 if (_hasAnimator)
@@ -383,7 +403,7 @@ namespace StarterAssets
                     _animator.SetBool(_animIDCrouch, false);
                     _animator.SetBool(_animIDSlide, false);
                 }
-                _input.punchLeft = false;
+                _input.PunchLeft = false;
                 _tryToCrouch = false; 
                 _tryToSlide = false; 
             }
@@ -393,12 +413,12 @@ namespace StarterAssets
         {
             if (!_aimAssist || LockOnTarget == null) { return; }
 
-            Vector2 input = _input.move;
+            Vector2 input = _input.Move;
            
-
+            float cameraEulerY = _mainCamera ? _mainCamera.transform.eulerAngles.y : 0f;
             // aim toward target
             _targetRotation = Mathf.Atan2(input.x, input.y) * Mathf.Rad2Deg +
-                                    _mainCamera.transform.eulerAngles.y;
+                                    cameraEulerY;
             Quaternion lockOnTargetRotation = Quaternion.Euler(new Vector3(0, _targetRotation, 0));
            
             Vector3 targetDirection = LockOnTarget.transform.position - transform.position;
@@ -457,7 +477,7 @@ namespace StarterAssets
             bool animRight = _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingRight");
             bool animLeft = _animator.GetCurrentAnimatorStateInfo(0).IsName("PunchingLeft");
 
-            return _input.punchRight || _input.punchLeft ||
+            return _input.PunchRight || _input.PunchLeft ||
                 animRight || animLeft;
         }
 
@@ -496,17 +516,17 @@ namespace StarterAssets
             }
 
 
-            if (_input.lockOn)
+            if (_input.LockOn)
             {
                 _lockOn = !_lockOn;
-                _input.lockOn = false;
+                _input.LockOn = false;
             }
-            if (_input.sprint)
+            if (_input.Sprint)
             {
                 if (_lockOn)
                 {
                     _lockOn = false;
-                    _input.lockOn = false;
+                    _input.LockOn = false;
                 }
 
                 if (CanStartSlide())
@@ -524,7 +544,7 @@ namespace StarterAssets
                 }
             }
 
-            if (_input.roll && Grounded && !_tryToRoll)
+            if (_input.Roll && Grounded && !_tryToRoll)
             {
                 if (CanStartRoll())
                 {
@@ -567,7 +587,7 @@ namespace StarterAssets
                 _rollResetTimer += rollResetTimerDelta;
 
                 // set target speed based on move speed, sprint speed and if sprint is pressed
-                targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+                targetSpeed = _input.Sprint ? SprintSpeed : MoveSpeed;
                 if (_tryToCrouch)
                 {
                     // limit speed to crouch speed
@@ -576,7 +596,7 @@ namespace StarterAssets
 
                 // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
                 // if there is no input, set the target speed to 0
-                if (_input.move == Vector2.zero) targetSpeed = 0.0f;
+                if (_input.Move == Vector2.zero) targetSpeed = 0.0f;
             }
 
 
@@ -585,7 +605,7 @@ namespace StarterAssets
 
             
             float speedOffset = 0.1f;
-            float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
+            float inputMagnitude = _input.analogMovement ? _input.Move.magnitude : 1f;
 
             // accelerate or decelerate to target speed
             if (currentHorizontalSpeed < targetSpeed - speedOffset ||
@@ -607,18 +627,18 @@ namespace StarterAssets
             _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
             if (_animationBlend < 0.01f) _animationBlend = 0f;
 
-            Vector2 input = _input.move;
+            Vector2 input = _input.Move;
 
             if (_previouslyAttacking)
             {
                 input = Vector2.zero;
             }
             // Convert the input direction from world space to camera space
-            Vector3 cameraForward = _mainCamera.transform.forward;
+            Vector3 cameraForward = _mainCamera ? _mainCamera.transform.forward: transform.forward;
             cameraForward.y = 0f;
             cameraForward.Normalize();
 
-            Vector3 cameraRight = _mainCamera.transform.right;
+            Vector3 cameraRight = _mainCamera ? _mainCamera.transform.right: transform.right;
             cameraRight.y = 0f;
             cameraRight.Normalize();
 
@@ -646,16 +666,23 @@ namespace StarterAssets
             // if there is a move input rotate player when the player is moving
             if (!_tryToSlide && !_tryToRoll)
             {
+                float cameraEulerY = _mainCamera ? _mainCamera.transform.eulerAngles.y : 0f;
+
                 _targetRotation = Mathf.Atan2(input.x, input.y) * Mathf.Rad2Deg +
-                                    _mainCamera.transform.eulerAngles.y;
+                                    cameraEulerY;
                 Quaternion lockOnTargetRotation = Quaternion.Euler(new Vector3(0, _targetRotation, 0));
                 if (LockOnTarget != null && _lockOn)
                 {
                     Vector3 targetDirection = LockOnTarget.transform.position - transform.position;
+                    Debug.DrawRay(transform.position, targetDirection, Color.red);
                     targetDirection.y = 0f;
                     if (targetDirection.magnitude > 0.1f)
                     {
-                        lockOnTargetRotation = Quaternion.LookRotation(targetDirection);
+                        lockOnTargetRotation = Quaternion.LookRotation(targetDirection.normalized);
+
+
+
+                        Debug.DrawRay(transform.position, targetDirection, Color.blue);
                         //transform.rotation = Quaternion.Slerp(transform.rotation, lockOnTargetRotation, RotationSmoothTime);
                     }
 
@@ -745,8 +772,8 @@ namespace StarterAssets
                 if(!_previouslyGrounded)
                 {
                     _verticalVelocity = 0f;
-                    _input.jump = false;
-                    _input.flipJump = false;
+                    _input.Jump = false;
+                    _input.FlipJump = false;
                 }
 
                 // update animator if using character
@@ -763,7 +790,7 @@ namespace StarterAssets
                     _verticalVelocity = -2f;
                 }
 
-                if (_input.flipJump && _jumpTimeoutDelta <= 0.0f)
+                if (_input.FlipJump && _jumpTimeoutDelta <= 0.0f)
                 {
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(FlipJumpHeight * -2f * Gravity);
@@ -780,7 +807,7 @@ namespace StarterAssets
                     _tryToSlide = false;
                 }
                 // Jump
-                else if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+                else if (_input.Jump && _jumpTimeoutDelta <= 0.0f)
                 {
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
@@ -837,8 +864,8 @@ namespace StarterAssets
                 }
 
                 // if we are not grounded, do not jump
-                _input.jump = false;
-                _input.flipJump = false;
+                _input.Jump = false;
+                _input.FlipJump = false;
             }
 
             // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)

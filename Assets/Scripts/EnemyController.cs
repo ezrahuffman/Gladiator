@@ -1,9 +1,10 @@
+using StarterAssets;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 
 
-public class EnemyController : MonoBehaviour
+public class EnemyController : ThirdPersonController
 {
     HealthSystem healthSystem;
 
@@ -12,14 +13,26 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float _reactionLerpTime = 0.1f;
 
 
-
-    private Animator _animator;
-    private bool _hasAnimator;
-    private int _animIDHitTrigger; 
     [SerializeField] private float _forceFactor = 0.1f;
 
-    void Start()
+
+    [Header("Input")]
+    [SerializeField] private Vector2 _inputMove;
+    [SerializeField] private bool _inputSprint;
+    [SerializeField] private bool _inputCrouch;
+    [SerializeField] private bool _inputJump;
+    [SerializeField] private bool _inputPunchLeft;
+    [SerializeField] private bool _inputPunchRight;
+    [SerializeField] private bool _inputFlipJump;
+    [SerializeField] private bool _inputRoll;
+    [SerializeField] private bool _inputLockOn;
+    [SerializeField] private bool _inputIsModified;
+    [SerializeField] private float _inputLookX;
+
+    public override void ClassStart()
     {
+        base.ClassStart();
+
         healthSystem = GetComponent<HealthSystem>();
         if(healthSystem != null)
         {
@@ -28,11 +41,36 @@ public class EnemyController : MonoBehaviour
             healthSystem.onHealthChanged += OnHealthChanged;
         }
 
-        _hasAnimator = TryGetComponent(out _animator);
-        if (_hasAnimator)
-        {
-            _animIDHitTrigger = Animator.StringToHash("HitTrigger");
-        }
+        //_hasAnimator = TryGetComponent(out _animator);
+        //if (_hasAnimator)
+        //{
+        //    _animIDHitTrigger = Animator.StringToHash("HitTrigger");
+        //}
+
+        _input = new InputWrapper();
+    }
+
+    //TODO: use machine learning to determine the input values
+    // Set the input for the controller
+    // This is done through the input system in the player character
+    public override void SetInputs()
+    {
+        //Need to find a different way to do this, seems that input is still being shared between the player and the enemy
+
+        _input.Move = _inputMove;
+        _input.Sprint = _inputSprint;
+        _input.Crouch = _inputCrouch;
+        _input.Jump = _inputJump;
+        _input.PunchLeft = _inputPunchLeft;
+        _input.PunchRight = _inputPunchRight;
+        _input.FlipJump = _inputFlipJump;
+        _input.Roll = _inputRoll;
+        // _input.LockOn = _inputLockOn; TODO: fix the lock on for the enemy
+        _input.IsModified = _inputIsModified;
+        _input.Look = new Vector2(_inputLookX, 0f);
+        _input.analogMovement = false;   // this allows the magnitude of the input to be used
+        _input.cursorLocked = false;     // Not sure if this changes anything
+        _input.cursorInputForLook = false ; // Not sure if this changes anything
     }
 
     protected virtual void OnTakeDamage(float dmg, GameObject dmgSource, Vector3 forceDir, Vector3 impactPoint)
@@ -55,10 +93,6 @@ public class EnemyController : MonoBehaviour
 
         // This probably needs to be smoothed instead of instantanious 
         StartCoroutine(LerpToTargetAndBack(closestContraint.data.target, targetPos + displacement, _reactionLerpTime));
-        //if(_hasAnimator)
-        //{
-        //    _animator.SetTrigger(_animIDHitTrigger);
-        //}
     }
 
     protected Vector3 GetLimitedDisplacement(Vector3 originalDisplacement, Ik_Maxs ikMax)
