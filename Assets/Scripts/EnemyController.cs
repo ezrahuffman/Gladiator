@@ -1,8 +1,10 @@
 using StarterAssets;
 using System.Collections;
 using UnityEngine;
+using Unity.MLAgents;
 using UnityEngine.Animations.Rigging;
-
+using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Sensors;
 
 public class EnemyController : ThirdPersonController
 {
@@ -15,22 +17,35 @@ public class EnemyController : ThirdPersonController
 
     [SerializeField] private float _forceFactor = 0.1f;
 
+    private Vector2 _inputMove;
+    private bool _inputSprint;
+    private bool _inputCrouch;
+    private bool _inputJump;
+    private bool _inputPunchLeft;
+    private bool _inputPunchRight;
+    private bool _inputFlipJump;
+    private bool _inputRoll;
+    private bool _inputLockOn;
+    private bool _inputIsModified;
+    private float _inputLookX;
 
-    [Header("Input")]
-    [SerializeField] private Vector2 _inputMove;
-    [SerializeField] private bool _inputSprint;
-    [SerializeField] private bool _inputCrouch;
-    [SerializeField] private bool _inputJump;
-    [SerializeField] private bool _inputPunchLeft;
-    [SerializeField] private bool _inputPunchRight;
-    [SerializeField] private bool _inputFlipJump;
-    [SerializeField] private bool _inputRoll;
-    [SerializeField] private bool _inputLockOn;
-    [SerializeField] private bool _inputIsModified;
-    [SerializeField] private float _inputLookX;
+    //Inspector variables
+    [Header("ML Agent Settings")]
+    [SerializeField] private float _lookScale = 300f;
+    [Tooltip("The reward the agent gets every second for existing")]
+    [SerializeField] private float _existentialReward = 0.1f;
+    [SerializeField] private float _killReward = 1f;
+
+    private Vector3 _startPosition = Vector3.zero;
+    private Quaternion _startRotation;
+   
 
     public override void ClassStart()
     {
+        _useUpdate = false; // fortraing we don't want to call the update loop from Unities update loop
+        _startPosition = transform.localPosition;
+        _startRotation = transform.localRotation;
+
         base.ClassStart();
 
         healthSystem = GetComponent<HealthSystem>();
@@ -50,24 +65,43 @@ public class EnemyController : ThirdPersonController
         _input = new InputWrapper();
     }
 
-    //TODO: use machine learning to determine the input values
+    public override void ClassUpdate()
+    {
+        base.ClassUpdate();
+        AddReward(_existentialReward * Time.deltaTime);
+    }
+
+    public override void PunchHit(Collision collision, Vector3 attackingPos, Weapon weapon)
+    {
+        base.PunchHit(collision, attackingPos, weapon);
+        if(collision.gameObject.TryGetComponent<HealthSystem>(out HealthSystem enemyHealthSystem))
+        {
+            if (enemyHealthSystem.Health <= 0)
+            {
+                AddReward(_killReward);
+                EndEpisode();
+            }
+        }
+        AddReward(punchDmg);
+    }
+
     // Set the input for the controller
     // This is done through the input system in the player character
     public override void SetInputs()
     {
-        //Need to find a different way to do this, seems that input is still being shared between the player and the enemy
+        //TODO: fix the lock on for the enemy (10 lines bellow)
 
-        _input.Move = _inputMove;
-        _input.Sprint = _inputSprint;
-        _input.Crouch = _inputCrouch;
-        _input.Jump = _inputJump;
-        _input.PunchLeft = _inputPunchLeft;
-        _input.PunchRight = _inputPunchRight;
-        _input.FlipJump = _inputFlipJump;
-        _input.Roll = _inputRoll;
-        // _input.LockOn = _inputLockOn; TODO: fix the lock on for the enemy
-        _input.IsModified = _inputIsModified;
-        _input.Look = new Vector2(_inputLookX, 0f);
+        _input.Move = _inputMove; // float_x, float_y | 2 continuous values
+        _input.Sprint = _inputSprint;// bool | 1 discrete value
+        _input.Crouch = _inputCrouch;// bool | 1 discrete value
+        _input.Jump = _inputJump;    // bool | 1 discrete value
+        _input.PunchLeft = _inputPunchLeft;// bool | 1 discrete value
+        _input.PunchRight = _inputPunchRight;// bool | 1 discrete value
+        _input.FlipJump = _inputFlipJump;// bool | 1 discrete value
+        _input.Roll = _inputRoll;// bool | 1 discrete value
+        // _input.LockOn = _inputLockOn; 
+        _input.IsModified = _inputIsModified;// bool | 1 discrete value
+        _input.Look = new Vector2(_inputLookX, 0f);// float_x | 1 continuous value
         _input.analogMovement = false;   // this allows the magnitude of the input to be used
         _input.cursorLocked = false;     // Not sure if this changes anything
         _input.cursorInputForLook = false ; // Not sure if this changes anything
@@ -75,6 +109,8 @@ public class EnemyController : ThirdPersonController
 
     protected virtual void OnTakeDamage(float dmg, GameObject dmgSource, Vector3 forceDir, Vector3 impactPoint)
     {
+        AddReward(-dmg);
+
         TwoBoneIKConstraint closestContraint = GetClosestConstraint(impactPoint);
 
         if (closestContraint == null)
@@ -157,11 +193,66 @@ public class EnemyController : ThirdPersonController
 
     protected virtual void OnReducedToNoHealth(HealthSystem healthSystem)
     {
-        Debug.Log($"{gameObject} has been reduced to no health");
+        SetReward(-1f); // losing is bad
+        EndEpisode();
     }
 
     protected virtual void OnHealthChanged(float maxHealth, float currHealth)
     {
         healthBar.UpateHealthbar(maxHealth, currHealth);
     }
+
+    public override void OnActionReceived(ActionBuffers actions)
+    {
+        //// Set floats/Vector2s
+        _inputMove =  new Vector2(actions.ContinuousActions[0], actions.ContinuousActions[1]);
+        _inputLookX = actions.ContinuousActions[2] * _lookScale;
+
+        // Set bools
+        _inputSprint = actions.DiscreteActions[0] == 1;
+        _inputCrouch = actions.DiscreteActions[1] == 1;
+        _inputJump = actions.DiscreteActions[2] == 1;
+        _inputPunchLeft = actions.DiscreteActions[3] == 1;
+        _inputPunchRight = actions.DiscreteActions[4] == 1;
+        _inputFlipJump = actions.DiscreteActions[5] == 1;
+        _inputIsModified = actions.DiscreteActions[6] == 1;
+        _inputRoll = actions.DiscreteActions[7] == 1;
+
+        ClassUpdate();
+    }
+
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        sensor.AddObservation(LockOnTarget.transform.localRotation); // 4
+        sensor.AddObservation(LockOnTarget.transform.localPosition); // 3
+        sensor.AddObservation(LockOnTarget.GetComponent<HealthSystem>().Health); // 1
+        sensor.AddObservation(transform.localPosition); // 3
+        sensor.AddObservation(transform.localRotation); // 4
+        sensor.AddObservation(healthSystem.Health); // 1
+        if (_hasAnimator) { 
+            sensor.AddObservation(_animator.GetCurrentAnimatorStateInfo(0).fullPathHash); // 1
+        }
+        if (LockOnTarget.TryGetComponent<Animator>(out var oponentAnimator))
+        {
+            sensor.AddObservation(oponentAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash); // 1
+        }
+
+        // the sum of the commented out observations is 18
+    }
+
+    public override void OnEpisodeBegin()
+    {
+        //  reset player position
+        transform.localPosition = _startPosition;
+
+        // reset player health
+        healthSystem.ResetHealth();
+
+        // reset rotation
+        transform.localRotation = _startRotation;
+
+    }
+
+
+
 }

@@ -67,6 +67,11 @@ public class HealthSystem : MonoBehaviour
         _attackers.Clear();
     }
 
+    public void ResetHealth()
+    {
+        SetHealth(maxHealth);
+    }
+
     private void SetHealth(float value) 
     {
         float ogHealth = _health;

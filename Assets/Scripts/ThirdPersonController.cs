@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.MLAgents;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
@@ -13,7 +14,7 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
     [RequireComponent(typeof(PlayerInput))]
 #endif
-    public class ThirdPersonController : MonoBehaviour
+    public class ThirdPersonController : Agent
     {
         [Header("Player")]
         [Tooltip("Move speed of the character in m/s")]
@@ -155,7 +156,7 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
         private PlayerInput _playerInput;
 #endif
-        private Animator _animator;
+        protected Animator _animator;
         private CharacterController _controller;
         private StarterAssetsInputs _starterAssetInputs;
         protected InputWrapper _input;
@@ -164,7 +165,7 @@ namespace StarterAssets
         
         private const float _threshold = 0.01f;
 
-        private bool _hasAnimator;
+        protected bool _hasAnimator;
 
         private bool _previouslyAttacking;
 
@@ -180,12 +181,13 @@ namespace StarterAssets
         [SerializeField] private float _timeToFlipJump;
 
         [Header ("Lock On")]
-        [SerializeField] private GameObject LockOnTarget;
+        [SerializeField] protected GameObject LockOnTarget;
         [SerializeField, Range(0f, 1f)] private float LockOnStrength;
         protected bool _lockOn;
         [SerializeField] private bool _aimAssist = true;
         [SerializeField, Range(0f, 1f)] private float _aimAssistStrength = .8f;
         [SerializeField] private float _lockOnTargetCloseDistance;
+        protected bool _useUpdate;
 
         private bool IsCurrentDeviceMouse
         {
@@ -255,7 +257,10 @@ namespace StarterAssets
 
         private void Update()
         {
-            ClassUpdate();
+            if (_useUpdate)
+            {
+                ClassUpdate();
+            }
         }
 
         public virtual void ClassUpdate()
@@ -455,7 +460,7 @@ namespace StarterAssets
             return;
         }
 
-        private void PunchHit(Collision collision, Vector3 attackingPos, Weapon weapon)
+        public virtual void PunchHit(Collision collision, Vector3 attackingPos, Weapon weapon)
         {
 
 
