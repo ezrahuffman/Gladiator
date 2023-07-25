@@ -1,0 +1,47 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1690222598",
+        "python_version": "3.9.7 (tags/v3.9.7:1016ef3, Aug 30 2021, 20:19:38) [MSC v.1929 64 bit (AMD64)]",
+        "command_line_arguments": "C:\\Users\\Ezra\\Gladiator\\venv\\Scripts\\mlagents-learn config\\moveToOpponent.yaml --torch-device=cuda --run-id=MoveToTarget_Custom_0 --force",
+        "mlagents_version": "0.30.0",
+        "mlagents_envs_version": "0.30.0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.0.1+cu117",
+        "numpy_version": "1.21.2",
+        "end_time_seconds": "1690222602"
+    },
+    "total": 4.597576,
+    "count": 1,
+    "self": 0.002353100000000552,
+    "children": {
+        "run_training.setup": {
+            "total": 0.05232709999999985,
+            "count": 1,
+            "self": 0.05232709999999985
+        },
+        "TrainerController.start_learning": {
+            "total": 4.5428958,
+            "count": 1,
+            "self": 0.00017989999999912243,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 4.5427092,
+                    "count": 1,
+                    "self": 4.5427092
+                },
+                "trainer_threads": {
+                    "total": 6.000000007944095e-07,
+                    "count": 1,
+                    "self": 6.000000007944095e-07
+                },
+                "TrainerController._save_models": {
+                    "total": 6.100000000230921e-06,
+                    "count": 1,
+                    "self": 6.100000000230921e-06
+                }
+            }
+        }
+    }
+}

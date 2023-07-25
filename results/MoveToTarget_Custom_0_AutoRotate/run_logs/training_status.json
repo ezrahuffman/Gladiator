@@ -1,0 +1,47 @@
+{
+    "MoveToOpponent": {
+        "checkpoints": [
+            {
+                "steps": 499999,
+                "file_path": "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent\\MoveToOpponent-499999.onnx",
+                "reward": 14.293544807036717,
+                "creation_time": 1690222847.9119782,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent\\MoveToOpponent-499999.pt"
+                ]
+            },
+            {
+                "steps": 999978,
+                "file_path": "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent\\MoveToOpponent-999978.onnx",
+                "reward": 15.259124353528023,
+                "creation_time": 1690223068.021607,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent\\MoveToOpponent-999978.pt"
+                ]
+            },
+            {
+                "steps": 1000042,
+                "file_path": "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent\\MoveToOpponent-1000042.onnx",
+                "reward": 15.259124353528023,
+                "creation_time": 1690223068.060526,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent\\MoveToOpponent-1000042.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 1000042,
+            "file_path": "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent.onnx",
+            "reward": 15.259124353528023,
+            "creation_time": 1690223068.060526,
+            "auxillary_file_paths": [
+                "results\\MoveToTarget_Custom_0_AutoRotate\\MoveToOpponent\\MoveToOpponent-1000042.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.0.1+cu117"
+    }
+}

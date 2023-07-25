@@ -158,7 +158,7 @@ namespace StarterAssets
 #endif
         protected Animator _animator;
         private CharacterController _controller;
-        private StarterAssetsInputs _starterAssetInputs;
+        protected StarterAssetsInputs _starterAssetInputs;
         protected InputWrapper _input;
         private GameObject _mainCamera;
         
@@ -187,7 +187,7 @@ namespace StarterAssets
         [SerializeField] private bool _aimAssist = true;
         [SerializeField, Range(0f, 1f)] private float _aimAssistStrength = .8f;
         [SerializeField] private float _lockOnTargetCloseDistance;
-        protected bool _useUpdate;
+        [SerializeField] protected bool _useUpdate;
 
         private bool IsCurrentDeviceMouse
         {

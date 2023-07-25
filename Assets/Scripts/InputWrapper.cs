@@ -26,7 +26,7 @@ public class InputWrapper
 
     private StarterAssetsInputs _starterAssetInputs;
 
-    public Vector2 Move { get => move; set { move = value; if (_starterAssetInputs) { _starterAssetInputs.move = move; } } }
+    public Vector2 Move { get => move; set { move = value; if (_starterAssetInputs) { /*_starterAssetInputs.move = move*/; } } }
     public Vector2 Look { get => look; set { look = value; if (_starterAssetInputs) { _starterAssetInputs.look = look; } } }
     public bool Jump { get => jump; set { jump = value; if (_starterAssetInputs) { _starterAssetInputs.jump = jump; } } }
     public bool Sprint { get => sprint; set { sprint = value; if (_starterAssetInputs) { _starterAssetInputs.sprint = sprint; } } }

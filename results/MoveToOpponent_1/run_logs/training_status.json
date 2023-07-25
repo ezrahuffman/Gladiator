@@ -1,0 +1,47 @@
+{
+    "MoveToOpponent": {
+        "checkpoints": [
+            {
+                "steps": 499989,
+                "file_path": "results\\MoveToOpponent_1\\MoveToOpponent\\MoveToOpponent-499989.onnx",
+                "reward": 8069.264285564423,
+                "creation_time": 1690073157.651833,
+                "auxillary_file_paths": [
+                    "results\\MoveToOpponent_1\\MoveToOpponent\\MoveToOpponent-499989.pt"
+                ]
+            },
+            {
+                "steps": 500053,
+                "file_path": "results\\MoveToOpponent_1\\MoveToOpponent\\MoveToOpponent-500053.onnx",
+                "reward": 8069.264285564423,
+                "creation_time": 1690073157.6768606,
+                "auxillary_file_paths": [
+                    "results\\MoveToOpponent_1\\MoveToOpponent\\MoveToOpponent-500053.pt"
+                ]
+            },
+            {
+                "steps": 500053,
+                "file_path": "results\\MoveToOpponent_1\\MoveToOpponent\\MoveToOpponent-500053.onnx",
+                "reward": null,
+                "creation_time": 1690073175.1898766,
+                "auxillary_file_paths": [
+                    "results\\MoveToOpponent_1\\MoveToOpponent\\MoveToOpponent-500053.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 500053,
+            "file_path": "results\\MoveToOpponent_1\\MoveToOpponent.onnx",
+            "reward": null,
+            "creation_time": 1690073175.1898766,
+            "auxillary_file_paths": [
+                "results\\MoveToOpponent_1\\MoveToOpponent\\MoveToOpponent-500053.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.0.1+cu117"
+    }
+}

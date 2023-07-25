@@ -1,0 +1,47 @@
+{
+    "MoveToOpponent": {
+        "checkpoints": [
+            {
+                "steps": 499958,
+                "file_path": "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent\\MoveToOpponent-499958.onnx",
+                "reward": 16.001403165715082,
+                "creation_time": 1690220488.3172472,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent\\MoveToOpponent-499958.pt"
+                ]
+            },
+            {
+                "steps": 999999,
+                "file_path": "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent\\MoveToOpponent-999999.onnx",
+                "reward": 15.905202996730804,
+                "creation_time": 1690220716.650555,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent\\MoveToOpponent-999999.pt"
+                ]
+            },
+            {
+                "steps": 1000063,
+                "file_path": "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent\\MoveToOpponent-1000063.onnx",
+                "reward": 15.905202996730804,
+                "creation_time": 1690220716.6860383,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent\\MoveToOpponent-1000063.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 1000063,
+            "file_path": "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent.onnx",
+            "reward": 15.905202996730804,
+            "creation_time": 1690220716.6860383,
+            "auxillary_file_paths": [
+                "results\\MoveToTarget_Custom_0_HighLearningRate\\MoveToOpponent\\MoveToOpponent-1000063.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.0.1+cu117"
+    }
+}

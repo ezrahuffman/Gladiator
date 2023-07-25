@@ -1,0 +1,65 @@
+{
+    "MoveToOpponent": {
+        "checkpoints": [
+            {
+                "steps": 499994,
+                "file_path": "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-499994.onnx",
+                "reward": 160.3889037132263,
+                "creation_time": 1690238943.9192472,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-499994.pt"
+                ]
+            },
+            {
+                "steps": 999971,
+                "file_path": "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-999971.onnx",
+                "reward": 189.56768067156682,
+                "creation_time": 1690239142.0377893,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-999971.pt"
+                ]
+            },
+            {
+                "steps": 1499999,
+                "file_path": "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-1499999.onnx",
+                "reward": 199.86383640766144,
+                "creation_time": 1690239340.6865857,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-1499999.pt"
+                ]
+            },
+            {
+                "steps": 1999978,
+                "file_path": "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-1999978.onnx",
+                "reward": 202.28033447265625,
+                "creation_time": 1690239538.8102794,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-1999978.pt"
+                ]
+            },
+            {
+                "steps": 2000025,
+                "file_path": "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-2000025.onnx",
+                "reward": 202.26210345902257,
+                "creation_time": 1690239538.8546,
+                "auxillary_file_paths": [
+                    "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-2000025.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 2000025,
+            "file_path": "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent.onnx",
+            "reward": 202.26210345902257,
+            "creation_time": 1690239538.8546,
+            "auxillary_file_paths": [
+                "results\\MoveToTarget_Custom_MissesMatter_LowLearnRate_BigNN\\MoveToOpponent\\MoveToOpponent-2000025.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.0.1+cu117"
+    }
+}

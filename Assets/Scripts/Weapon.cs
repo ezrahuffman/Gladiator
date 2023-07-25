@@ -18,14 +18,15 @@ public class Weapon : MonoBehaviour
     /// [SerializeField] Transform playerTrans;
     /// </summary>
     /// 
-    string _targetTag = "Enemy";
+    string _targetTag = "Target";
+    [SerializeField] Transform _parentTrans;
 
 
     private void Start()
     {
         //Invoke(nameof(SetPos), .1f);
 
-        _targetTag = gameObject.tag == "Player" ? "Enemy" : "Player";
+        //_targetTag = gameObject.tag == "Player" ? "Enemy" : "Player";
     }
 
     //private void SetPos()
@@ -37,6 +38,11 @@ public class Weapon : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        if(collision.gameObject.transform.IsChildOf(_parentTrans))
+        {
+            return;
+        }
+
         if (!collision.gameObject.CompareTag(_targetTag))
         {
             return;

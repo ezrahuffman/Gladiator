@@ -5,8 +5,10 @@ using Unity.MLAgents;
 using UnityEngine.Animations.Rigging;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
+using UnityEngine.InputSystem;
+using TMPro;
 
-public class EnemyController : ThirdPersonController
+public class EnemyController : Agent
 {
     HealthSystem healthSystem;
 
@@ -16,18 +18,12 @@ public class EnemyController : ThirdPersonController
 
 
     [SerializeField] private float _forceFactor = 0.1f;
+    [SerializeField] private float _moveSpeed = 1f;
+    [SerializeField] private float _attackTimeOut = 1f;
+    private float _attackTimer;
 
-    private Vector2 _inputMove;
-    private bool _inputSprint;
-    private bool _inputCrouch;
-    private bool _inputJump;
-    private bool _inputPunchLeft;
-    private bool _inputPunchRight;
-    private bool _inputFlipJump;
-    private bool _inputRoll;
-    private bool _inputLockOn;
-    private bool _inputIsModified;
-    private float _inputLookX;
+    [SerializeField]private Vector2 _inputMove;
+    [SerializeField] private bool _inputAttack;
 
     //Inspector variables
     [Header("ML Agent Settings")]
@@ -35,87 +31,117 @@ public class EnemyController : ThirdPersonController
     [Tooltip("The reward the agent gets every second for existing")]
     [SerializeField] private float _existentialReward = 0.1f;
     [SerializeField] private float _killReward = 1f;
+    [SerializeField] private float _missedPenalty = -1f;
+
 
     private Vector3 _startPosition = Vector3.zero;
     private Quaternion _startRotation;
-   
+    private StarterAssetsInputs _input;
 
-    public override void ClassStart()
+    private int _animIDRightPunchTrigger;
+    private bool _hasAnimator;
+    private Animator _animator;
+
+    [SerializeField] private Weapon _rightHand;
+
+    [SerializeField] private Transform LockOnTarget;
+
+    private bool _attacking;
+    private bool _attackHit;
+    
+
+    public void Start()
     {
-        _useUpdate = false; // fortraing we don't want to call the update loop from Unities update loop
+        //_useUpdate = false; // fortraing we don't want to call the update loop from Unities update loop
         _startPosition = transform.localPosition;
         _startRotation = transform.localRotation;
 
-        base.ClassStart();
+        _hasAnimator = TryGetComponent(out _animator);
+        if (_hasAnimator)
+        {
+            _animIDRightPunchTrigger = Animator.StringToHash("PunchRightTrigger");
+        }
 
-        healthSystem = GetComponent<HealthSystem>();
+        _attackTimer = Time.time;
+
+        _rightHand.OnWeaponCollision += OnWeaponCollision;
+        
+        //StarterAssetsInputs starterAssetsInputs = gameObject.GetComponent<StarterAssetsInputs>();
+        //Debug.Log($"EnemyController starterAssetsInputs {starterAssetsInputs}");
+        //_input = new InputWrapper(starterAssetsInputs);
+        /*healthSystem = GetComponent<HealthSystem>();
         if(healthSystem != null)
         {
             healthSystem.onTakeDmg += OnTakeDamage;
-            healthSystem.onReducedToNoHealth += OnReducedToNoHealth;
+            //healthSystem.onReducedToNoHealth += OnReducedToNoHealth;
             healthSystem.onHealthChanged += OnHealthChanged;
-        }
+        }*/
+        
 
-        //_hasAnimator = TryGetComponent(out _animator);
-        //if (_hasAnimator)
-        //{
-        //    _animIDHitTrigger = Animator.StringToHash("HitTrigger");
-        //}
-
-        _input = new InputWrapper();
+        _input = GetComponent<StarterAssetsInputs>();
     }
-
-    public override void ClassUpdate()
+    private void OnCollisionEnter(Collision colliision)
     {
-        base.ClassUpdate();
-        AddReward(_existentialReward * Time.deltaTime);
-    }
-
-    public override void PunchHit(Collision collision, Vector3 attackingPos, Weapon weapon)
-    {
-        base.PunchHit(collision, attackingPos, weapon);
-        if(collision.gameObject.TryGetComponent<HealthSystem>(out HealthSystem enemyHealthSystem))
+        //Debug.Log($"EnemyController OnControllerColliderHit {hit.gameObject.name}");
+        if (colliision.gameObject.CompareTag("Wall"))
         {
-            if (enemyHealthSystem.Health <= 0)
+            AddReward(-50);
+            EndEpisode();
+        }
+    }
+
+    private void OnWeaponCollision(Collision collision, Vector3 handPos, Weapon weapon)
+    {
+        float dmg = 10f;
+
+
+        if(collision.gameObject.TryGetComponent(out HealthSystem healthSystem))
+        {
+            healthSystem.RecieveDmg(dmg, gameObject, Vector3.forward, Vector3.zero);
+
+            AddReward(dmg * 2);
+
+            _attackHit = true;
+
+            if(healthSystem.Health <= 0)
             {
                 AddReward(_killReward);
                 EndEpisode();
             }
         }
-        AddReward(punchDmg);
+
+        
     }
 
-    // Set the input for the controller
-    // This is done through the input system in the player character
-    public override void SetInputs()
+    public override void Heuristic(in ActionBuffers actionsOut)
     {
-        //TODO: fix the lock on for the enemy (10 lines bellow)
+        float x = 0;
+        float y = 0;
+        if(_input != null)
+        {
+            x = _input.move.x;
+            y = _input.move.y;
+        }
 
-        _input.Move = _inputMove; // float_x, float_y | 2 continuous values
-        _input.Sprint = _inputSprint;// bool | 1 discrete value
-        _input.Crouch = _inputCrouch;// bool | 1 discrete value
-        _input.Jump = _inputJump;    // bool | 1 discrete value
-        _input.PunchLeft = _inputPunchLeft;// bool | 1 discrete value
-        _input.PunchRight = _inputPunchRight;// bool | 1 discrete value
-        _input.FlipJump = _inputFlipJump;// bool | 1 discrete value
-        _input.Roll = _inputRoll;// bool | 1 discrete value
-        // _input.LockOn = _inputLockOn; 
-        _input.IsModified = _inputIsModified;// bool | 1 discrete value
-        _input.Look = new Vector2(_inputLookX, 0f);// float_x | 1 continuous value
-        _input.analogMovement = false;   // this allows the magnitude of the input to be used
-        _input.cursorLocked = false;     // Not sure if this changes anything
-        _input.cursorInputForLook = false ; // Not sure if this changes anything
+        actionsOut.ContinuousActions.Array[0] = x;
+        actionsOut.ContinuousActions.Array[1] = y;
+
+        
+        actionsOut.DiscreteActions.Array[0] = _input.punchRight ? 1 : 0;
+
+        Debug.Log($"Heuristic x: {x}, y: {y}");
     }
 
+    /*
     protected virtual void OnTakeDamage(float dmg, GameObject dmgSource, Vector3 forceDir, Vector3 impactPoint)
     {
-        AddReward(-dmg);
+        //AddReward(-dmg);
 
         TwoBoneIKConstraint closestContraint = GetClosestConstraint(impactPoint);
 
         if (closestContraint == null)
         {
-            Debug.LogWarning("No closest constraint found. Make sure constraints are set for this object");
+            //Debug.LogWarning("No closest constraint found. Make sure constraints are set for this object");
             return;
         }
 
@@ -123,8 +149,8 @@ public class EnemyController : ThirdPersonController
         Ik_Maxs ik_Max = closestContraint.gameObject.GetComponent<Ik_Maxs>();
         Vector3 displacement = forceDir * _forceFactor * dmg;
         displacement = ik_Max == null ? displacement : GetLimitedDisplacement(displacement, ik_Max);
-        Debug.DrawLine(targetPos, targetPos + displacement, Color.red, 10f);
-        Debug.Log($"Took ${dmg} from ${dmgSource}, targetPos = {targetPos}, forceDir: {forceDir}]");
+        //Debug.DrawLine(targetPos, targetPos + displacement, Color.red, 10f);
+        //Debug.Log($"Took ${dmg} from ${dmgSource}, targetPos = {targetPos}, forceDir: {forceDir}]");
 
 
         // This probably needs to be smoothed instead of instantanious 
@@ -191,53 +217,74 @@ public class EnemyController : ThirdPersonController
         return closestConstraint;
     }
 
-    protected virtual void OnReducedToNoHealth(HealthSystem healthSystem)
-    {
-        SetReward(-1f); // losing is bad
-        EndEpisode();
-    }
+    //protected virtual void OnReducedToNoHealth(HealthSystem healthSystem)
+    //{
+    //    AddReward(_deathPenalty); // losing is bad
+    //    EndEpisode();
+    //}
 
     protected virtual void OnHealthChanged(float maxHealth, float currHealth)
     {
         healthBar.UpateHealthbar(maxHealth, currHealth);
-    }
+    }*/
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        //// Set floats/Vector2s
-        _inputMove =  new Vector2(actions.ContinuousActions[0], actions.ContinuousActions[1]);
-        _inputLookX = actions.ContinuousActions[2] * _lookScale;
+        // Set floats/Vector2s (continuous actions)
+        _inputMove = new Vector2(actions.ContinuousActions[0], actions.ContinuousActions[1]);
+        transform.Translate(_inputMove.x * Time.deltaTime * _moveSpeed, 0f, _inputMove.y * Time.deltaTime * _moveSpeed);
 
-        // Set bools
-        _inputSprint = actions.DiscreteActions[0] == 1;
-        _inputCrouch = actions.DiscreteActions[1] == 1;
-        _inputJump = actions.DiscreteActions[2] == 1;
-        _inputPunchLeft = actions.DiscreteActions[3] == 1;
-        _inputPunchRight = actions.DiscreteActions[4] == 1;
-        _inputFlipJump = actions.DiscreteActions[5] == 1;
-        _inputIsModified = actions.DiscreteActions[6] == 1;
-        _inputRoll = actions.DiscreteActions[7] == 1;
+        // Set bool (descrete actions)
+        _inputAttack = actions.DiscreteActions[0] == 1;
 
-        ClassUpdate();
+        //Do attack (simple punch to start)
+        if (_inputAttack && _attackTimer < Time.time)
+        {
+            _attacking = true;
+            _attackHit = false;
+            int trigger = _animIDRightPunchTrigger;
+
+            if (_hasAnimator)
+            {
+                _animator.SetTrigger(trigger);
+            }
+
+            _attackTimer = _attackTimeOut + Time.time;
+
+            _inputAttack = false;
+        }
+ 
+
+        // Don't move while attacking
+        if(_attackTimer > Time.time)
+        {
+            _inputMove = Vector2.zero;
+        }
+        else
+        {
+            // we just finished attacking
+            if(_attacking)
+            {
+                if (!_attackHit) { AddReward(_missedPenalty); }
+                _attacking = false;
+                _attackHit = false;
+            }
+            Vector3 lookDir = LockOnTarget.localPosition - transform.localPosition;
+            transform.rotation = Quaternion.LookRotation(new Vector3(lookDir.x, 0f, lookDir.z));
+        }
+
+        // Add Rewards
+        float dist = 10 - Vector3.Distance(transform.localPosition, LockOnTarget.localPosition);
+        AddReward(dist * 0.1f * Time.deltaTime);
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        sensor.AddObservation(LockOnTarget.transform.localRotation); // 4
-        sensor.AddObservation(LockOnTarget.transform.localPosition); // 3
-        sensor.AddObservation(LockOnTarget.GetComponent<HealthSystem>().Health); // 1
-        sensor.AddObservation(transform.localPosition); // 3
-        sensor.AddObservation(transform.localRotation); // 4
-        sensor.AddObservation(healthSystem.Health); // 1
-        if (_hasAnimator) { 
-            sensor.AddObservation(_animator.GetCurrentAnimatorStateInfo(0).fullPathHash); // 1
-        }
-        if (LockOnTarget.TryGetComponent<Animator>(out var oponentAnimator))
-        {
-            sensor.AddObservation(oponentAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash); // 1
-        }
-
-        // the sum of the commented out observations is 18
+        sensor.AddObservation(LockOnTarget.localPosition.x); 
+        sensor.AddObservation(LockOnTarget.localPosition.z);
+        sensor.AddObservation(transform.localPosition.x); 
+        sensor.AddObservation(transform.localPosition.z);
+       
     }
 
     public override void OnEpisodeBegin()
@@ -246,10 +293,20 @@ public class EnemyController : ThirdPersonController
         transform.localPosition = _startPosition;
 
         // reset player health
-        healthSystem.ResetHealth();
+        if(LockOnTarget.TryGetComponent(out HealthSystem healthSystem))
+        {
+            healthSystem.ResetHealth();
+        }
+
+        //reset the position of the target
+        LockOnTarget.localPosition = new Vector3( Random.Range(-4f, 4f), LockOnTarget.localPosition.y, Random.Range(-4f, 3.8f));
 
         // reset rotation
         transform.localRotation = _startRotation;
+
+        _attacking = false;
+        _attackTimer = Time.time;
+        _attackHit = false;
 
     }
 
