@@ -789,7 +789,7 @@ PrefabInstance:
     - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
@@ -800,6 +800,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.data[0]
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
+        type: 3}
+      propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.data[1]
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7020039020662174774, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}

@@ -8,6 +8,11 @@ using Unity.MLAgents.Sensors;
 using UnityEngine.InputSystem;
 using TMPro;
 
+public enum AttackType
+{
+    PunchRight, PunchLeft, KickRight, KickLeft
+}
+
 public class EnemyController : Agent
 {
     HealthSystem healthSystem;
@@ -24,6 +29,7 @@ public class EnemyController : Agent
 
     [SerializeField]private Vector2 _inputMove;
     [SerializeField] private bool _inputAttack;
+    [SerializeField] private bool _training = false;
 
     //Inspector variables
     [Header("ML Agent Settings")]
@@ -39,6 +45,9 @@ public class EnemyController : Agent
     private StarterAssetsInputs _input;
 
     private int _animIDRightPunchTrigger;
+    private int _animIDLeftPunchTrigger;
+    private int _animIDRightKickTrigger;
+    private int _animIDLeftKickTrigger;
     private bool _hasAnimator;
     private Animator _animator;
 
@@ -48,6 +57,7 @@ public class EnemyController : Agent
 
     private bool _attacking;
     private bool _attackHit;
+    private AttackType _attackType;
     
 
     public void Start()
@@ -60,6 +70,9 @@ public class EnemyController : Agent
         if (_hasAnimator)
         {
             _animIDRightPunchTrigger = Animator.StringToHash("PunchRightTrigger");
+            _animIDLeftPunchTrigger = Animator.StringToHash("PunchLeftTrigger");
+            _animIDRightKickTrigger = Animator.StringToHash("KickRightTrigger");
+            _animIDLeftKickTrigger = Animator.StringToHash("KickLeftTrigger");
         }
 
         _attackTimer = Time.time;
@@ -83,7 +96,7 @@ public class EnemyController : Agent
     private void OnCollisionEnter(Collision colliision)
     {
         //Debug.Log($"EnemyController OnControllerColliderHit {hit.gameObject.name}");
-        if (colliision.gameObject.CompareTag("Wall"))
+        if (colliision.gameObject.CompareTag("Wall") && !_training)
         {
             AddReward(-50);
             EndEpisode();
@@ -92,6 +105,11 @@ public class EnemyController : Agent
 
     private void OnWeaponCollision(Collision collision, Vector3 handPos, Weapon weapon)
     {
+        if(!_attacking)
+        {
+            return;
+        }
+
         float dmg = 10f;
 
 
@@ -236,13 +254,36 @@ public class EnemyController : Agent
 
         // Set bool (descrete actions)
         _inputAttack = actions.DiscreteActions[0] == 1;
+        _attackType = (AttackType)actions.DiscreteActions[1];
 
         //Do attack (simple punch to start)
         if (_inputAttack && _attackTimer < Time.time)
         {
             _attacking = true;
             _attackHit = false;
-            int trigger = _animIDRightPunchTrigger;
+            int trigger = _animIDRightPunchTrigger; // right punch is default attack
+            switch (_attackType)
+            {
+                case AttackType.PunchLeft:
+                    Debug.Log("Punch left");
+                    trigger = _animIDLeftPunchTrigger;
+                    break;
+                case AttackType.PunchRight:
+                    Debug.Log("Punch Right");
+                    trigger = _animIDRightPunchTrigger;
+                    break;
+                case AttackType.KickRight:
+                    Debug.Log("Kick Right");
+                    trigger = _animIDRightKickTrigger;
+                    break;
+                case AttackType.KickLeft:
+                    Debug.Log("Kick Left");
+                    trigger = _animIDLeftKickTrigger;
+                    break;
+                default:
+                    Debug.LogError("Invalid attack type");
+                    break;
+            }
 
             if (_hasAnimator)
             {
