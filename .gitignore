@@ -73,3 +73,6 @@ crashlytics-build.properties
 
 #python virtual enviroment
 /venv/
+
+#ML-Agents Training Results (already copying the actual brain)
+/results/
