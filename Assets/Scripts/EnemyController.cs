@@ -29,7 +29,9 @@ public class EnemyController : Agent
 
     [SerializeField]private Vector2 _inputMove;
     [SerializeField] private bool _inputAttack;
-    [SerializeField] private bool _training = false;
+   
+    [SerializeField, Tooltip("Disables some resets while testing behaviour")]
+    private bool _testing = false;
 
     //Inspector variables
     [Header("ML Agent Settings")]
@@ -58,6 +60,7 @@ public class EnemyController : Agent
     private bool _attacking;
     private bool _attackHit;
     private AttackType _attackType;
+    private HealthSystem _targetHealthSystem;
     
 
     public void Start()
@@ -78,7 +81,7 @@ public class EnemyController : Agent
         _attackTimer = Time.time;
 
         _rightHand.OnWeaponCollision += OnWeaponCollision;
-        
+
         //StarterAssetsInputs starterAssetsInputs = gameObject.GetComponent<StarterAssetsInputs>();
         //Debug.Log($"EnemyController starterAssetsInputs {starterAssetsInputs}");
         //_input = new InputWrapper(starterAssetsInputs);
@@ -89,6 +92,8 @@ public class EnemyController : Agent
             //healthSystem.onReducedToNoHealth += OnReducedToNoHealth;
             healthSystem.onHealthChanged += OnHealthChanged;
         }*/
+
+        _targetHealthSystem = LockOnTarget.GetComponent<HealthSystem>();
         
 
         _input = GetComponent<StarterAssetsInputs>();
@@ -96,7 +101,7 @@ public class EnemyController : Agent
     private void OnCollisionEnter(Collision colliision)
     {
         //Debug.Log($"EnemyController OnControllerColliderHit {hit.gameObject.name}");
-        if (colliision.gameObject.CompareTag("Wall") && !_training)
+        if (colliision.gameObject.CompareTag("Wall") && !_testing)
         {
             AddReward(-50);
             EndEpisode();
@@ -115,11 +120,11 @@ public class EnemyController : Agent
 
         if(collision.gameObject.TryGetComponent(out HealthSystem healthSystem))
         {
-            healthSystem.RecieveDmg(dmg, gameObject, Vector3.forward, Vector3.zero);
+            float trueDmg = healthSystem.RecieveDmg(dmg, gameObject, Vector3.forward, Vector3.zero);
 
-            AddReward(dmg * 2);
+            AddReward(trueDmg * 2);
 
-            _attackHit = true;
+            _attackHit = trueDmg != 0f; // Blocked hits are treated as misses
 
             if(healthSystem.Health <= 0)
             {
@@ -135,17 +140,20 @@ public class EnemyController : Agent
     {
         float x = 0;
         float y = 0;
+        bool punchRight = false;
         if(_input != null)
         {
             x = _input.move.x;
             y = _input.move.y;
+            punchRight = _input.punchRight;
         }
 
         actionsOut.ContinuousActions.Array[0] = x;
         actionsOut.ContinuousActions.Array[1] = y;
 
         
-        actionsOut.DiscreteActions.Array[0] = _input.punchRight ? 1 : 0;
+
+        actionsOut.DiscreteActions.Array[0] = punchRight ? 1 : 0;
 
         Debug.Log($"Heuristic x: {x}, y: {y}");
     }
@@ -265,23 +273,23 @@ public class EnemyController : Agent
             switch (_attackType)
             {
                 case AttackType.PunchLeft:
-                    Debug.Log("Punch left");
+                    //Debug.Log("Punch left");
                     trigger = _animIDLeftPunchTrigger;
                     break;
                 case AttackType.PunchRight:
-                    Debug.Log("Punch Right");
+                    //Debug.Log("Punch Right");
                     trigger = _animIDRightPunchTrigger;
                     break;
                 case AttackType.KickRight:
-                    Debug.Log("Kick Right");
+                    //Debug.Log("Kick Right");
                     trigger = _animIDRightKickTrigger;
                     break;
                 case AttackType.KickLeft:
-                    Debug.Log("Kick Left");
+                    //Debug.Log("Kick Left");
                     trigger = _animIDLeftKickTrigger;
                     break;
                 default:
-                    Debug.LogError("Invalid attack type");
+                    //Debug.LogError("Invalid attack type");
                     break;
             }
 
@@ -325,7 +333,7 @@ public class EnemyController : Agent
         sensor.AddObservation(LockOnTarget.localPosition.z);
         sensor.AddObservation(transform.localPosition.x); 
         sensor.AddObservation(transform.localPosition.z);
-       
+        sensor.AddObservation(_targetHealthSystem.IsBlocking);
     }
 
     public override void OnEpisodeBegin()

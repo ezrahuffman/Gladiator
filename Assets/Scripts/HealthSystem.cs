@@ -28,6 +28,9 @@ public class HealthSystem : MonoBehaviour
     [Tooltip("The time in seconds before the same attack can deal dmg. Meant to stop unintended multiple hits from single attacks.")]
     [SerializeField] private float _attackTimeOut = 0.5f;
 
+    private bool _isBlocking = false;
+    public bool IsBlocking { get { return _isBlocking; } }
+
     protected HashSet<GameObject> _attackers = new HashSet<GameObject>();
 
     private void Start()
@@ -36,18 +39,24 @@ public class HealthSystem : MonoBehaviour
     }
 
 
-    public void RecieveDmg(float rawDmg, GameObject dmgSource, Vector3 forceDir, Vector3 hitPos)
+    public float RecieveDmg(float rawDmg, GameObject dmgSource, Vector3 forceDir, Vector3 hitPos)
     {
         // Don't take dmg if already dead
         if(_health <= 0)
         {
-            return;
+            return 0f;
+        }
+
+        if (_isBlocking)
+        {
+            Block(rawDmg, dmgSource, forceDir, hitPos);
+            return 0f;
         }
 
        // Don't take dmg from same source twice in a row
        if(_attackers.Contains(dmgSource))
         {
-            return;
+            return 0f;
         }
        _attackers.Add(dmgSource);
 
@@ -57,9 +66,17 @@ public class HealthSystem : MonoBehaviour
 
         onTakeDmg?.Invoke(trueDmg, dmgSource, forceDir, hitPos);
        
-
         Invoke(nameof(RemoveAttacker), _attackTimeOut);
+
+        return trueDmg;
         
+    }
+
+
+    //TODO: implement block
+    private void Block(float rawDmg, GameObject dmgSource, Vector3 forceDir, Vector3 hitPos)
+    {
+       //Debug.Log("Blocked");
     }
 
     private void RemoveAttacker()
@@ -90,6 +107,11 @@ public class HealthSystem : MonoBehaviour
             onReducedToNoHealth.Invoke(this);
         }
         
+    }
+
+    internal void SetBlock(bool block)
+    {
+        _isBlocking = block;
     }
 
     public float Health

@@ -131,6 +131,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _moveSpeed: 5
   _changeDirTime: 1.2
+  _changeBlockTime: 2
+  _blockTimeoutTime: 0.75
+  _mat: {fileID: 0}
 --- !u!114 &61720888650699352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -677,6 +680,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1807452667634911945}
     m_Modifications:
     - target: {fileID: 2090444843, guid: ddace20d0680af84a8142cda47d38bb4, type: 3}
+      propertyPath: MaxStep
+      value: 2000
+      objectReference: {fileID: 0}
+    - target: {fileID: 2090444843, guid: ddace20d0680af84a8142cda47d38bb4, type: 3}
       propertyPath: _moveSpeed
       value: 2
       objectReference: {fileID: 0}
@@ -773,13 +780,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
+      propertyPath: m_BrainParameters.VectorObservationSize
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
+        type: 3}
       propertyPath: m_BrainParameters.VectorActionSize.Array.size
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
       propertyPath: m_BrainParameters.NumStackedVectorObservations
-      value: 3
+      value: 22
       objectReference: {fileID: 0}
     - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
@@ -837,7 +849,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DecisionPeriod: 5
+  DecisionPeriod: 3
   TakeActionsBetweenDecisions: 1
 --- !u!114 &2428043970244242098 stripped
 MonoBehaviour:
