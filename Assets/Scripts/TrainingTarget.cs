@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
-using UnityEditor.Profiling;
 using UnityEngine;
 
 public class TrainingTarget : MonoBehaviour
@@ -77,7 +73,8 @@ public class TrainingTarget : MonoBehaviour
 
 
         Vector3 delta = new Vector3(dir.x, 0, dir.y).normalized * _moveSpeed * Time.deltaTime;
-        _rb.MovePosition(transform.position + delta);
+        //_rb.MovePosition((transform.position + delta) * Time.deltaTime);
+        transform.Translate(delta);
     }
 
     private void SetBlocking(bool blocking)

@@ -18,7 +18,7 @@ public class Weapon : MonoBehaviour
     /// [SerializeField] Transform playerTrans;
     /// </summary>
     /// 
-    string _targetTag = "Target";
+    string _targetTag = "Enemy";
     [SerializeField] Transform _parentTrans;
 
 

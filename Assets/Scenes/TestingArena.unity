@@ -307,6 +307,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1553352752355057117, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_Name
+      value: Wall
+      objectReference: {fileID: 0}
+    - target: {fileID: 1553352752355057117, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     - target: {fileID: 1807452667634911945, guid: 4b3e90184f5a09940b80ad6a76bfa288,
         type: 3}
       propertyPath: m_RootOrder
@@ -367,11 +377,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enviroment
       objectReference: {fileID: 0}
+    - target: {fileID: 1844535551981135255, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_Name
+      value: Floor
+      objectReference: {fileID: 0}
     - target: {fileID: 2033905653895385803, guid: 4b3e90184f5a09940b80ad6a76bfa288,
         type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 5022602860645237092, guid: 5cc8dca218e599b4cad4de9b9bf25bd8,
+      objectReference: {fileID: 5022602860645237092, guid: 1b85f6b14eb2ae44eacf3d321998897d,
         type: 3}
     - target: {fileID: 2033905653895385803, guid: 4b3e90184f5a09940b80ad6a76bfa288,
         type: 3}
@@ -398,15 +413,45 @@ PrefabInstance:
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.data[1]
       value: 4
       objectReference: {fileID: 0}
+    - target: {fileID: 2270854284427105802, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_Name
+      value: Wall
+      objectReference: {fileID: 0}
+    - target: {fileID: 2270854284427105802, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     - target: {fileID: 2428043970429094907, guid: 4b3e90184f5a09940b80ad6a76bfa288,
         type: 3}
       propertyPath: MaxStep
-      value: 1000
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2428043970429094907, guid: 4b3e90184f5a09940b80ad6a76bfa288,
         type: 3}
       propertyPath: _training
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3115509540983960634, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_Name
+      value: Wall
+      objectReference: {fileID: 0}
+    - target: {fileID: 3115509540983960634, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
+    - target: {fileID: 3806741624588197071, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_Name
+      value: Wall
+      objectReference: {fileID: 0}
+    - target: {fileID: 3806741624588197071, guid: 4b3e90184f5a09940b80ad6a76bfa288,
+        type: 3}
+      propertyPath: m_TagString
+      value: Untagged
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4b3e90184f5a09940b80ad6a76bfa288, type: 3}

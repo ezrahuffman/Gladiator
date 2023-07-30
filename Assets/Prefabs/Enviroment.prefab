@@ -791,7 +791,7 @@ PrefabInstance:
     - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
       propertyPath: m_BrainParameters.NumStackedVectorObservations
-      value: 22
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4434857381133480219, guid: ddace20d0680af84a8142cda47d38bb4,
         type: 3}
