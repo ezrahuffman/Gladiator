@@ -1,4 +1,4 @@
-# Hello!
+# Hello! 👋
 ## I am assuming that you are here from my portfolio. If not give it a look [here](https://ezrahuffman.com).
 
 ## Overview
